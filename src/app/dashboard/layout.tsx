@@ -20,6 +20,7 @@ import {
   LogOut,
   User,
   School,
+  Book,
 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { Logo } from "@/components/logo"
@@ -39,6 +40,7 @@ export default function DashboardLayout({
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/dashboard/attendance", icon: CheckSquare, label: "Absensi" },
     { href: "/dashboard/classes", icon: School, label: "Kelas" },
+    { href: "/dashboard/subjects", icon: Book, label: "Pelajaran" },
     { href: "/dashboard/reports", icon: FileText, label: "Laporan" },
   ]
 

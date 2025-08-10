@@ -2,7 +2,7 @@
  * @fileoverview Service for interacting with the Google Sheets API.
  */
 import { google } from 'googleapis';
-import type { AddClassInput, SheetClass } from '@/lib/definitions';
+import type { AddClassInput, SheetClass, AddSubjectInput, SheetSubject } from '@/lib/definitions';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,10 +10,15 @@ dotenv.config();
 
 // This is the ID of your Google Sheet.
 const SPREADSHEET_ID = "1uAj6drt6llPnE5ql-xKA-wi8ZAiStSMjTsuEI6dFiSM";
-// This is the name of the sheet (tab) within your Google Sheet.
-const SHEET_NAME = 'Classes';
-const DATA_RANGE = `${SHEET_NAME}!A2:B`; // Range to get data, skipping header
-const FULL_RANGE = `${SHEET_NAME}!A:B`; // Range for full sheet operations
+// Sheet Names
+const CLASSES_SHEET_NAME = 'Classes';
+const SUBJECTS_SHEET_NAME = 'Subjects';
+
+// Data Ranges
+const CLASSES_DATA_RANGE = `${CLASSES_SHEET_NAME}!A2:B`;
+const CLASSES_FULL_RANGE = `${CLASSES_SHEET_NAME}!A:B`;
+const SUBJECTS_DATA_RANGE = `${SUBJECTS_SHEET_NAME}!A2:B`;
+const SUBJECTS_FULL_RANGE = `${SUBJECTS_SHEET_NAME}!A:B`;
 
 function getAuth() {
   if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
@@ -35,11 +40,13 @@ async function getSheetsApi() {
   return google.sheets({ version: 'v4', auth: authClient });
 }
 
+// ========== Class Functions ==========
+
 export async function getClasses(): Promise<SheetClass[]> {
   const sheets = await getSheetsApi();
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: DATA_RANGE,
+    range: CLASSES_DATA_RANGE,
   });
 
   const rows = response.data.values;
@@ -57,7 +64,7 @@ export async function addClass(classData: AddClassInput): Promise<void> {
   const newId = `C${Date.now()}`;
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,
-    range: DATA_RANGE,
+    range: CLASSES_DATA_RANGE,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[newId, classData.name]],
@@ -69,25 +76,23 @@ export async function updateClass(classData: SheetClass): Promise<void> {
     const sheets = await getSheetsApi();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: FULL_RANGE, // We need the full range to get the correct row index
+      range: CLASSES_FULL_RANGE,
     });
   
     const rows = response.data.values;
     if (!rows) throw new Error('Sheet not found or empty.');
   
-    // Find the index of the row to update.
     const rowIndex = rows.findIndex(row => row[0] === classData.id);
   
     if (rowIndex === -1) {
       throw new Error(`Class with ID ${classData.id} not found.`);
     }
   
-    // Sheet rows are 1-based, so add 1 to the 0-based rowIndex.
     const sheetRowNumber = rowIndex + 1;
   
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!B${sheetRowNumber}`,
+      range: `${CLASSES_SHEET_NAME}!B${sheetRowNumber}`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [[classData.name]],
@@ -99,7 +104,7 @@ export async function deleteClass(id: string): Promise<void> {
     const sheets = await getSheetsApi();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: FULL_RANGE,
+      range: CLASSES_FULL_RANGE,
     });
   
     const rows = response.data.values;
@@ -115,6 +120,90 @@ export async function deleteClass(id: string): Promise<void> {
 
     await sheets.spreadsheets.values.clear({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A${sheetRowNumber}:B${sheetRowNumber}`,
+        range: `${CLASSES_SHEET_NAME}!A${sheetRowNumber}:B${sheetRowNumber}`,
+    });
+}
+
+// ========== Subject Functions ==========
+
+export async function getSubjects(): Promise<SheetSubject[]> {
+  const sheets = await getSheetsApi();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: SUBJECTS_DATA_RANGE,
+  });
+
+  const rows = response.data.values;
+  if (rows && rows.length) {
+    return rows.map((row) => ({
+      id: row[0],
+      name: row[1],
+    })).filter(s => s.id && s.name);
+  }
+  return [];
+}
+
+export async function addSubject(subjectData: AddSubjectInput): Promise<void> {
+  const sheets = await getSheetsApi();
+  const newId = `S${Date.now()}`;
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: SUBJECTS_DATA_RANGE,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [[newId, subjectData.name]],
+    },
+  });
+}
+
+export async function updateSubject(subjectData: SheetSubject): Promise<void> {
+    const sheets = await getSheetsApi();
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: SUBJECTS_FULL_RANGE,
+    });
+  
+    const rows = response.data.values;
+    if (!rows) throw new Error('Sheet not found or empty.');
+  
+    const rowIndex = rows.findIndex(row => row[0] === subjectData.id);
+  
+    if (rowIndex === -1) {
+      throw new Error(`Subject with ID ${subjectData.id} not found.`);
+    }
+  
+    const sheetRowNumber = rowIndex + 1;
+  
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SUBJECTS_SHEET_NAME}!B${sheetRowNumber}`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[subjectData.name]],
+      },
+    });
+}
+
+export async function deleteSubject(id: string): Promise<void> {
+    const sheets = await getSheetsApi();
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: SUBJECTS_FULL_RANGE,
+    });
+  
+    const rows = response.data.values;
+    if (!rows) throw new Error('Sheet not found or empty.');
+
+    const rowIndex = rows.findIndex(row => row[0] === id);
+  
+    if (rowIndex === -1) {
+      throw new Error(`Subject with ID ${id} not found.`);
+    }
+
+    const sheetRowNumber = rowIndex + 1;
+
+    await sheets.spreadsheets.values.clear({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SUBJECTS_SHEET_NAME}!A${sheetRowNumber}:B${sheetRowNumber}`,
     });
 }
