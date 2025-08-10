@@ -7,10 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import * as attendanceFlow from "@/ai/flows/attendance-flow"
 import type { SheetStudent, SheetAttendance, AttendanceStatus } from "@/lib/definitions"
-import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info } from "lucide-react"
+import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info, Video, VideoOff } from "lucide-react"
 import { format, startOfWeek, startOfMonth, isWithinInterval } from "date-fns"
 import { id } from "date-fns/locale"
 import { Label } from "@/components/ui/label"
@@ -42,6 +43,8 @@ export default function StudentDashboardPage() {
   const [currentTime, setCurrentTime] = React.useState(new Date())
   const [reason, setReason] = React.useState("")
   const [showReasonInput, setShowReasonInput] = React.useState(false)
+  const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean | null>(null);
+  const videoRef = React.useRef<HTMLVideoElement>(null)
 
   const todayString = format(new Date(), "yyyy-MM-dd");
 
@@ -52,6 +55,29 @@ export default function StudentDashboardPage() {
     return () => clearInterval(timer)
   }, [])
   
+  React.useEffect(() => {
+    const getCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setHasCameraPermission(true);
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Izin Kamera Ditolak',
+          description: 'Absensi memerlukan izin kamera. Silakan aktifkan di pengaturan browser Anda.',
+        });
+      }
+    };
+
+    getCameraPermission();
+  }, [toast]);
+
   React.useEffect(() => {
     const studentData = sessionStorage.getItem('student')
     if (!studentData) {
@@ -64,9 +90,6 @@ export default function StudentDashboardPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // This flow needs to be created to fetch all attendance for a student
-        // For now, we will assume it exists and returns all records.
-        // In a real scenario, you'd implement `getAllAttendanceForStudent(studentId)`
         const allRecords: SheetAttendance[] = await (attendanceFlow as any).getAllAttendanceForStudent(parsedStudent.id);
         
         const todayRecord = allRecords.find(att => att.date === todayString);
@@ -74,7 +97,6 @@ export default function StudentDashboardPage() {
         setAllAttendance(allRecords);
       } catch (error) {
         console.error(error)
-        // Fallback to empty array on error
         setAllAttendance([]);
         toast({ title: "Gagal memuat riwayat", description: "Tidak dapat mengambil riwayat absensi dari server.", variant: "destructive" })
       } finally {
@@ -116,6 +138,17 @@ export default function StudentDashboardPage() {
         })
         return;
     }
+    
+    // In a future step, we would capture the photo here.
+    // For now, we'll just check permission.
+    if(status === 'present' && !hasCameraPermission) {
+        toast({
+            title: "Kamera tidak siap",
+            description: "Pastikan Anda telah memberikan izin kamera untuk melakukan absensi.",
+            variant: "destructive"
+        })
+        return;
+    }
 
     setIsLoading(true);
     try {
@@ -128,7 +161,6 @@ export default function StudentDashboardPage() {
             reason: status === 'excused' ? reason : undefined
         });
         
-        // Refetch today's attendance
         const fetchedAttendance = await attendanceFlow.getStudentAttendanceForDate(student.id, todayString);
         const todayRecord = fetchedAttendance.length > 0 ? fetchedAttendance[0] : null
         setTodaysAttendance(todayRecord);
@@ -184,37 +216,55 @@ export default function StudentDashboardPage() {
                     <p className="text-muted-foreground">Status: <span className="font-bold capitalize">{todaysAttendance.status}</span></p>
                 </div>
             ) : (
-                <div>
-                {!showReasonInput ? (
-                    <div className="grid grid-cols-2 gap-4">
-                        <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="h-6 w-6 animate-spin"/> : <CheckCircle className="h-6 w-6"/>}
-                            Hadir
-                        </Button>
-                        <Button size="lg" variant="destructive" className="h-20 text-lg flex-col gap-1" onClick={() => setShowReasonInput(true)} disabled={isLoading}>
-                             <XCircle className="h-6 w-6"/>
-                            Tidak Hadir
-                        </Button>
+                <div className="grid md:grid-cols-2 gap-8 items-center">
+                    <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                       <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
+                       {hasCameraPermission === false && (
+                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4">
+                           <VideoOff className="w-12 h-12 mb-2" />
+                           <p className="text-center font-semibold">Kamera tidak dapat diakses.</p>
+                           <p className="text-center text-sm">Mohon izinkan akses kamera di browser Anda.</p>
+                         </div>
+                       )}
+                       {hasCameraPermission === null && (
+                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white">
+                            <Loader2 className="w-8 h-8 animate-spin" />
+                         </div>
+                       )}
                     </div>
-                ) : (
-                    <div className="space-y-4 animate-fade-in-up">
-                        <Label htmlFor="reason" className="text-base">Alasan Tidak Hadir</Label>
-                        <Textarea 
-                            id="reason"
-                            placeholder="Contoh: Sakit"
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            rows={3}
-                        />
-                        <div className="flex gap-2 justify-end">
-                            <Button variant="ghost" onClick={() => setShowReasonInput(false)} disabled={isLoading}>Batal</Button>
-                            <Button onClick={() => handleAttendance('excused')} disabled={isLoading}>
-                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Kirim Alasan
-                            </Button>
-                        </div>
+
+                    <div className="space-y-4">
+                      {!showReasonInput ? (
+                          <div className="flex flex-col gap-4">
+                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isLoading || !hasCameraPermission}>
+                                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin"/> : <Video className="h-6 w-6"/>}
+                                  Hadir (Dengan Kamera)
+                              </Button>
+                              <Button size="lg" variant="outline" className="h-20 text-lg flex-col gap-1" onClick={() => setShowReasonInput(true)} disabled={isLoading}>
+                                  <XCircle className="h-6 w-6"/>
+                                  Izin / Sakit
+                              </Button>
+                          </div>
+                      ) : (
+                          <div className="space-y-4 animate-fade-in-up">
+                              <Label htmlFor="reason" className="text-base">Alasan Tidak Hadir</Label>
+                              <Textarea 
+                                  id="reason"
+                                  placeholder="Contoh: Sakit"
+                                  value={reason}
+                                  onChange={(e) => setReason(e.target.value)}
+                                  rows={3}
+                              />
+                              <div className="flex gap-2 justify-end">
+                                  <Button variant="ghost" onClick={() => setShowReasonInput(false)} disabled={isLoading}>Batal</Button>
+                                  <Button onClick={() => handleAttendance('excused')} disabled={isLoading}>
+                                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                      Kirim Alasan
+                                  </Button>
+                              </div>
+                          </div>
+                      )}
                     </div>
-                )}
                 </div>
             )}
           </CardContent>
