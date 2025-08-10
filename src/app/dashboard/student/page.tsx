@@ -40,6 +40,7 @@ export default function StudentDashboardPage() {
   const [filteredHistory, setFilteredHistory] = React.useState<SheetAttendance[]>([])
   const [historyFilter, setHistoryFilter] = React.useState<HistoryFilter>("today")
   const [isLoading, setIsLoading] = React.useState(true)
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [currentTime, setCurrentTime] = React.useState(new Date())
   const [reason, setReason] = React.useState("")
   const [showReasonInput, setShowReasonInput] = React.useState(false)
@@ -91,12 +92,12 @@ export default function StudentDashboardPage() {
       setIsLoading(true);
       try {
         const [todayRecords, allRecords] = await Promise.all([
-          (attendanceFlow as any).getStudentAttendanceForDate(parsedStudent.id, todayString),
-          (attendanceFlow as any).getAllAttendanceForStudent(parsedStudent.id)
+          attendanceFlow.getStudentAttendanceForDate(parsedStudent.id, todayString),
+          attendanceFlow.getAllAttendanceForStudent(parsedStudent.id)
         ]);
         
-        const todayRecord = todayRecords.find(att => att.date === todayString);
-        setTodaysAttendance(todayRecord || null);
+        const todayRecord = todayRecords.find(att => att.date === todayString) || null;
+        setTodaysAttendance(todayRecord);
         setAllAttendance(allRecords);
       } catch (error) {
         console.error(error)
@@ -162,7 +163,7 @@ export default function StudentDashboardPage() {
         }
     }
 
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
         await attendanceFlow.markStudentAttendance({
             studentId: student.id,
@@ -175,10 +176,10 @@ export default function StudentDashboardPage() {
         });
         
         const fetchedAttendance = await attendanceFlow.getStudentAttendanceForDate(student.id, todayString);
-        const todayRecord = fetchedAttendance.length > 0 ? fetchedAttendance[0] : null
+        const todayRecord = fetchedAttendance.find(att => att.date === todayString) || null;
         setTodaysAttendance(todayRecord);
         if(todayRecord) {
-            setAllAttendance(prev => [todayRecord!, ...prev.filter(a => a.date !== todayString)]);
+            setAllAttendance(prev => [todayRecord, ...prev.filter(a => a.date !== todayString)]);
         }
         setShowReasonInput(false);
 
@@ -187,7 +188,7 @@ export default function StudentDashboardPage() {
         console.error(error);
         toast({ title: "Gagal", description: "Tidak dapat menyimpan kehadiran.", variant: "destructive" });
     } finally {
-        setIsLoading(false);
+        setIsSubmitting(false);
     }
   }
 
@@ -222,7 +223,11 @@ export default function StudentDashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {todaysAttendance ? (
+            {isLoading ? (
+                <div className="flex justify-center items-center h-48">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary"/>
+                </div>
+            ) : todaysAttendance ? (
                 <div className="text-center p-6 bg-green-50 rounded-lg">
                     <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-2"/>
                     <h3 className="text-lg font-semibold">Anda Sudah Absen Hari Ini</h3>
@@ -249,11 +254,11 @@ export default function StudentDashboardPage() {
                     <div className="space-y-4">
                       {!showReasonInput ? (
                           <div className="flex flex-col gap-4">
-                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isLoading || !hasCameraPermission}>
-                                  {isLoading ? <Loader2 className="h-6 w-6 animate-spin"/> : <Video className="h-6 w-6"/>}
+                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || !hasCameraPermission}>
+                                  {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin"/> : <Video className="h-6 w-6"/>}
                                   Hadir (Dengan Kamera)
                               </Button>
-                              <Button size="lg" variant="outline" className="h-20 text-lg flex-col gap-1" onClick={() => setShowReasonInput(true)} disabled={isLoading}>
+                              <Button size="lg" variant="outline" className="h-20 text-lg flex-col gap-1" onClick={() => setShowReasonInput(true)} disabled={isSubmitting}>
                                   <XCircle className="h-6 w-6"/>
                                   Izin / Sakit
                               </Button>
@@ -269,9 +274,9 @@ export default function StudentDashboardPage() {
                                   rows={3}
                               />
                               <div className="flex gap-2 justify-end">
-                                  <Button variant="ghost" onClick={() => setShowReasonInput(false)} disabled={isLoading}>Batal</Button>
-                                  <Button onClick={() => handleAttendance('excused')} disabled={isLoading}>
-                                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  <Button variant="ghost" onClick={() => setShowReasonInput(false)} disabled={isSubmitting}>Batal</Button>
+                                  <Button onClick={() => handleAttendance('excused')} disabled={isSubmitting}>
+                                      {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                       Kirim Alasan
                                   </Button>
                               </div>
@@ -340,5 +345,3 @@ export default function StudentDashboardPage() {
     </main>
   )
 }
-
-    
