@@ -90,9 +90,12 @@ export default function StudentDashboardPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const allRecords: SheetAttendance[] = await (attendanceFlow as any).getAllAttendanceForStudent(parsedStudent.id);
+        const [todayRecords, allRecords] = await Promise.all([
+          (attendanceFlow as any).getStudentAttendanceForDate(parsedStudent.id, todayString),
+          (attendanceFlow as any).getAllAttendanceForStudent(parsedStudent.id)
+        ]);
         
-        const todayRecord = allRecords.find(att => att.date === todayString);
+        const todayRecord = todayRecords.find(att => att.date === todayString);
         setTodaysAttendance(todayRecord || null);
         setAllAttendance(allRecords);
       } catch (error) {
@@ -337,3 +340,5 @@ export default function StudentDashboardPage() {
     </main>
   )
 }
+
+    
