@@ -87,7 +87,8 @@ export default function StudentDashboardPage() {
     };
 
     getCameraPermission();
-  }, [toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   React.useEffect(() => {
     const studentData = sessionStorage.getItem('student')
@@ -251,6 +252,7 @@ export default function StudentDashboardPage() {
                             {hasCameraPermission === null && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white">
                                     <Loader2 className="w-8 h-8 animate-spin" />
+                                    <p className="mt-2">Meminta izin kamera...</p>
                                 </div>
                             )}
                         </div>
