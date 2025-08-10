@@ -33,6 +33,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { addStudent, deleteStudent, getStudentsByClass, updateStudent, getClassDetails } from "@/ai/flows/student-flow"
 import type { SheetStudent, SheetClass } from "@/lib/definitions"
 
+type StudentFormState = Omit<SheetStudent, 'id' | 'classId'>
+
 export default function StudentsPage({ params }: { params: { classId: string } }) {
   const { classId } = params;
   const { toast } = useToast()
@@ -41,8 +43,12 @@ export default function StudentsPage({ params }: { params: { classId: string } }
   const [classDetails, setClassDetails] = React.useState<SheetClass | null>(null)
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [currentStudent, setCurrentStudent] = React.useState<SheetStudent | null>(null)
-  const [studentName, setStudentName] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(true)
+  const [formState, setFormState] = React.useState<StudentFormState>({
+    name: "",
+    username: "",
+    password: "",
+  });
 
   const fetchStudentsAndClass = React.useCallback(async () => {
     setIsLoading(true);
@@ -71,26 +77,39 @@ export default function StudentsPage({ params }: { params: { classId: string } }
 
   const openDialog = (student: SheetStudent | null = null) => {
     setCurrentStudent(student)
-    setStudentName(student ? student.name : "")
+    if (student) {
+      setFormState({
+        name: student.name,
+        username: student.username,
+        password: student.password,
+      });
+    } else {
+      setFormState({ name: "", username: "", password: "" });
+    }
     setIsDialogOpen(true)
   }
 
   const closeDialog = () => {
     setIsDialogOpen(false)
     setCurrentStudent(null)
-    setStudentName("")
+    setFormState({ name: "", username: "", password: "" });
   }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormState(prev => ({ ...prev, [id]: value }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!studentName) return
+    if (!formState.name || !formState.username || !formState.password) return
 
     try {
       if (currentStudent) {
-        await updateStudent({ id: currentStudent.id, name: studentName });
-        toast({ title: "Sukses!", description: "Nama siswa berhasil diperbarui." })
+        await updateStudent({ ...formState, id: currentStudent.id, classId: currentStudent.classId });
+        toast({ title: "Sukses!", description: "Data siswa berhasil diperbarui." })
       } else {
-        await addStudent({ name: studentName, classId: classId });
+        await addStudent({ ...formState, classId: classId });
         toast({ title: "Sukses!", description: "Siswa baru berhasil ditambahkan." })
       }
       fetchStudentsAndClass();
@@ -156,16 +175,16 @@ export default function StudentsPage({ params }: { params: { classId: string } }
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID Siswa</TableHead>
                   <TableHead>Nama Siswa</TableHead>
+                  <TableHead>Username</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {students.map((student) => (
                   <TableRow key={student.id}>
-                    <TableCell className="font-mono text-sm">{student.id}</TableCell>
                     <TableCell className="font-medium">{student.name}</TableCell>
+                    <TableCell>{student.username}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -216,7 +235,7 @@ export default function StudentsPage({ params }: { params: { classId: string } }
             <DialogHeader>
               <DialogTitle>{currentStudent ? "Ubah Siswa" : "Tambah Siswa Baru"}</DialogTitle>
               <DialogDescription>
-                {currentStudent ? "Ubah nama siswa di bawah ini." : "Masukkan nama untuk siswa baru."}
+                {currentStudent ? "Ubah data siswa di bawah ini." : "Masukkan data untuk siswa baru."}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -226,10 +245,36 @@ export default function StudentsPage({ params }: { params: { classId: string } }
                 </Label>
                 <Input
                   id="name"
-                  value={studentName}
-                  onChange={(e) => setStudentName(e.target.value)}
+                  value={formState.name}
+                  onChange={handleInputChange}
                   className="col-span-3"
                   placeholder="Contoh: Budi Santoso"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="username" className="text-right">
+                  Username
+                </Label>
+                <Input
+                  id="username"
+                  value={formState.username}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                  placeholder="Contoh: budi.s"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="password" className="text-right">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formState.password}
+                  onChange={handleInputChange}
+                  className="col-span-3"
                   required
                 />
               </div>

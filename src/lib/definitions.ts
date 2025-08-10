@@ -26,17 +26,23 @@ export const SheetStudentSchema = z.object({
     id: z.string(),
     name: z.string(),
     classId: z.string(),
+    username: z.string(),
+    password: z.string(),
 });
 export type SheetStudent = z.infer<typeof SheetStudentSchema>;
 
 export const AddStudentInputSchema = z.object({
     name: z.string(),
     classId: z.string(),
+    username: z.string(),
+    password: z.string(),
 });
 export type AddStudentInput = z.infer<typeof AddStudentInputSchema>;
 
 export const UpdateStudentInputSchema = z.object({
     id: z.string(),
     name: z.string(),
+    username: z.string(),
+    password: z.string(),
 });
 export type UpdateStudentInput = z.infer<typeof UpdateStudentInputSchema>;

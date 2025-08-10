@@ -21,8 +21,8 @@ const CLASSES_DATA_RANGE = `${CLASSES_SHEET_NAME}!A2:B`;
 const CLASSES_FULL_RANGE = `${CLASSES_SHEET_NAME}!A:B`;
 const SUBJECTS_DATA_RANGE = `${SUBJECTS_SHEET_NAME}!A2:B`;
 const SUBJECTS_FULL_RANGE = `${SUBJECTS_SHEET_NAME}!A:B`;
-const STUDENTS_DATA_RANGE = `${STUDENTS_SHEET_NAME}!A2:C`;
-const STUDENTS_FULL_RANGE = `${STUDENTS_SHEET_NAME}!A:C`;
+const STUDENTS_DATA_RANGE = `${STUDENTS_SHEET_NAME}!A2:E`;
+const STUDENTS_FULL_RANGE = `${STUDENTS_SHEET_NAME}!A:E`;
 
 
 function getAuth() {
@@ -233,6 +233,8 @@ export async function getStudentsByClass(classId: string): Promise<SheetStudent[
       id: row[0],
       name: row[1],
       classId: row[2],
+      username: row[3],
+      password: row[4],
     })).filter(s => s.id && s.name && s.classId);
     return allStudents.filter(s => s.classId === classId);
   }
@@ -247,7 +249,7 @@ export async function addStudent(studentData: AddStudentInput): Promise<void> {
     range: STUDENTS_DATA_RANGE,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
-      values: [[newId, studentData.name, studentData.classId]],
+      values: [[newId, studentData.name, studentData.classId, studentData.username, studentData.password]],
     },
   });
 }
@@ -272,10 +274,10 @@ export async function updateStudent(studentData: UpdateStudentInput): Promise<vo
 
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${STUDENTS_SHEET_NAME}!B${sheetRowNumber}`,
+    range: `${STUDENTS_SHEET_NAME}!B${sheetRowNumber}:E${sheetRowNumber}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
-      values: [[studentData.name]],
+      values: [[studentData.name, studentData.classId, studentData.username, studentData.password]],
     },
   });
 }
@@ -300,6 +302,6 @@ export async function deleteStudent(id: string): Promise<void> {
 
   await sheets.spreadsheets.values.clear({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${STUDENTS_SHEET_NAME}!A${sheetRowNumber}:C${sheetRowNumber}`,
+    range: `${STUDENTS_SHEET_NAME}!A${sheetRowNumber}:E${sheetRowNumber}`,
   });
 }
