@@ -24,7 +24,7 @@ const SUBJECTS_DATA_RANGE = `${SUBJECTS_SHEET_NAME}!A2:B`;
 const SUBJECTS_FULL_RANGE = `${SUBJECTS_SHEET_NAME}!A:B`;
 const STUDENTS_DATA_RANGE = `${STUDENTS_SHEET_NAME}!A2:E`;
 const STUDENTS_FULL_RANGE = `${STUDENTS_SHEET_NAME}!A:E`;
-const ATTENDANCE_DATA_RANGE = `${ATTENDANCE_SHEET_NAME}!A2:G`;
+const ATTENDANCE_DATA_RANGE = `${ATTENDANCE_SHEET_NAME}!A2:H`;
 
 
 function getAuth() {
@@ -278,10 +278,10 @@ export async function updateStudent(studentData: UpdateStudentInput): Promise<vo
 
   const sheetRowNumber = rowIndex + 1;
 
-  // Note: We are updating from column B (name) to E (password). classId is not updated here.
+  // Note: We are updating from column B (name) to D (password). classId is not updated here.
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${STUDENTS_SHEET_NAME}!B${sheetRowNumber}:E${sheetRowNumber}`,
+    range: `${STUDENTS_SHEET_NAME}!B${sheetRowNumber}:D${sheetRowNumber}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[studentData.name, studentData.username, studentData.password]],
@@ -328,10 +328,11 @@ export async function markStudentAttendance(attendanceData: StudentAttendanceInp
                 newId,
                 attendanceData.date,
                 attendanceData.classId,
-                attendanceData.subjectId,
+                attendanceData.subjectId || '', // Optional
                 attendanceData.studentId,
                 attendanceData.studentName,
-                attendanceData.status
+                attendanceData.status,
+                attendanceData.reason || '' // Optional
             ]],
         },
     });
@@ -354,6 +355,7 @@ export async function getStudentAttendanceForDate(studentId: string, date: strin
             studentId: row[4],
             studentName: row[5],
             status: row[6],
+            reason: row[7],
         })).filter(att => att.id && att.studentId && att.date);
 
         return allAttendance.filter(att => att.studentId === studentId && att.date === date);

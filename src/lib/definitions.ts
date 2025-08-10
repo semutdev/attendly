@@ -60,19 +60,21 @@ export const SheetAttendanceSchema = z.object({
     id: z.string(),
     date: z.string(),
     classId: z.string(),
-    subjectId: z.string(),
     studentId: z.string(),
     studentName: z.string(),
     status: AttendanceStatusSchema,
+    subjectId: z.string().optional(),
+    reason: z.string().optional(),
 });
 export type SheetAttendance = z.infer<typeof SheetAttendanceSchema>;
 
 export const StudentAttendanceInputSchema = z.object({
   date: z.string(),
   classId: z.string(),
-  subjectId: z.string(),
   studentId: z.string(),
   studentName: z.string(),
   status: AttendanceStatusSchema,
+  subjectId: z.string().optional(),
+  reason: z.string().optional(),
 });
 export type StudentAttendanceInput = z.infer<typeof StudentAttendanceInputSchema>;
