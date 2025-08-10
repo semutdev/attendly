@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import * as attendanceFlow from "@/ai/flows/attendance-flow"
 import type { SheetStudent, SheetAttendance, AttendanceStatus } from "@/lib/definitions"
-import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info, VideoOff, MapPin, Sparkles } from "lucide-react"
+import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info, MapPin, Sparkles, UserCheck } from "lucide-react"
 import { format, startOfWeek, startOfMonth, isWithinInterval } from "date-fns"
 import { id } from "date-fns/locale"
 import { Label } from "@/components/ui/label"
@@ -57,13 +57,10 @@ export default function StudentDashboardPage() {
   const [currentTime, setCurrentTime] = React.useState(new Date())
   const [reason, setReason] = React.useState("")
   const [showReasonInput, setShowReasonInput] = React.useState(false)
-  const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean | null>(null);
   const [location, setLocation] = React.useState<{ latitude: number; longitude: number } | null>(null)
   const [locationError, setLocationError] = React.useState<string | null>(null)
   const [motivationalQuote, setMotivationalQuote] = React.useState("");
 
-  const videoRef = React.useRef<HTMLVideoElement>(null)
-  const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const todayString = format(new Date(), "yyyy-MM-dd");
 
   React.useEffect(() => {
@@ -75,52 +72,6 @@ export default function StudentDashboardPage() {
   }, [])
   
   React.useEffect(() => {
-    const getCameraPermission = async () => {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        console.error('Camera API not supported.');
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Kamera Tidak Didukung',
-          description: 'Browser Anda tidak mendukung akses kamera.',
-        });
-        return;
-      }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setHasCameraPermission(true);
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-             if (videoRef.current && canvasRef.current) {
-                const video = videoRef.current;
-                const canvas = canvasRef.current;
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const context = canvas.getContext('2d');
-                
-                const drawFrame = () => {
-                    if (context && video.srcObject) {
-                        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
-                        requestAnimationFrame(drawFrame);
-                    }
-                }
-                drawFrame();
-             }
-          }
-        }
-      } catch (error) {
-        console.error('Error accessing camera:', error);
-        setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Akses Kamera Ditolak',
-          description: 'Mohon izinkan akses kamera di browser Anda untuk melanjutkan.',
-        });
-      }
-    };
-
     const getLocation = () => {
         if (!navigator.geolocation) {
             setLocationError("Geolocation tidak didukung oleh browser Anda.");
@@ -145,8 +96,6 @@ export default function StudentDashboardPage() {
             }
         );
     };
-
-    getCameraPermission();
     getLocation();
   }, [toast]);
 
@@ -214,25 +163,13 @@ export default function StudentDashboardPage() {
         return;
     }
     
-    let photoDataUri: string | undefined = undefined;
-    if(status === 'present') {
-        if(!hasCameraPermission || !canvasRef.current) {
-            toast({
-                title: "Kamera tidak siap",
-                description: "Pastikan Anda telah memberikan izin kamera dan kamera berfungsi.",
-                variant: "destructive"
-            })
-            return;
-        }
-        if(!location) {
-             toast({
-                title: "Lokasi tidak siap",
-                description: "Pastikan Anda telah memberikan izin lokasi dan lokasi berfungsi.",
-                variant: "destructive"
-            })
-            return;
-        }
-        photoDataUri = canvasRef.current.toDataURL('image/jpeg');
+    if(!location) {
+         toast({
+            title: "Lokasi tidak siap",
+            description: "Pastikan Anda telah memberikan izin lokasi dan lokasi berfungsi.",
+            variant: "destructive"
+        })
+        return;
     }
 
     setIsSubmitting(true);
@@ -244,7 +181,6 @@ export default function StudentDashboardPage() {
             date: todayString,
             status: status,
             reason: status === 'excused' ? reason : undefined,
-            photoDataUri: photoDataUri,
             location: location ? `${location.latitude}, ${location.longitude}` : undefined,
         });
         
@@ -307,41 +243,9 @@ export default function StudentDashboardPage() {
                     <p className="text-muted-foreground">Status: <span className="font-bold capitalize">{todaysAttendance.status}</span></p>
                 </div>
             ) : (
-                <div className="grid md:grid-cols-2 gap-8 items-start">
-                     <div>
-                        <div className="relative aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
-                             <video ref={videoRef} className="hidden" autoPlay />
-                             <canvas ref={canvasRef} className="w-full h-full object-cover" />
-                             {hasCameraPermission === null && (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white">
-                                    <Loader2 className="w-8 h-8 animate-spin" />
-                                    <p className="mt-2">Meminta izin kamera...</p>
-                                </div>
-                            )}
-                        </div>
-                        {hasCameraPermission === false && (
-                            <Alert variant="destructive" className="mt-4">
-                                <VideoOff className="h-4 w-4" />
-                                <AlertTitle>Kamera Tidak Dapat Diakses</AlertTitle>
-                                <AlertDescription>
-                                    Mohon izinkan akses kamera di browser Anda untuk melanjutkan. Jika sudah, segarkan halaman.
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                         {locationError && (
-                            <Alert variant="destructive" className="mt-4">
-                                <MapPin className="h-4 w-4" />
-                                <AlertTitle>Lokasi Tidak Dapat Diakses</AlertTitle>
-                                <AlertDescription>
-                                    {locationError}
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                    </div>
-
-                    <div className="space-y-4">
+                 <div className="flex flex-col items-center gap-4">
                       {!showReasonInput ? (
-                          <div className="flex flex-col gap-4">
+                          <div className="w-full max-w-sm flex flex-col gap-4">
                               <Alert className="border-primary/50 bg-primary/5">
                                 <Sparkles className="h-4 w-4 text-primary" />
                                 <AlertTitle className="text-primary font-semibold">Motivasi Hari Ini</AlertTitle>
@@ -349,16 +253,26 @@ export default function StudentDashboardPage() {
                                    {motivationalQuote}
                                 </AlertDescription>
                               </Alert>
-                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || hasCameraPermission !== true || !location}>
-                                  {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin"/> : "Hadir (Dengan Kamera)"}
+                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || !location}>
+                                  {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin"/> : <UserCheck className="h-6 w-6"/>}
+                                  Hadir
                               </Button>
                               <Button size="lg" variant="outline" className="h-20 text-lg flex-col gap-1" onClick={() => setShowReasonInput(true)} disabled={isSubmitting}>
                                   <XCircle className="h-6 w-6"/>
                                   Izin / Sakit
                               </Button>
+                              {locationError && (
+                                <Alert variant="destructive" className="mt-4">
+                                    <MapPin className="h-4 w-4" />
+                                    <AlertTitle>Lokasi Tidak Dapat Diakses</AlertTitle>
+                                    <AlertDescription>
+                                        {locationError}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                           </div>
                       ) : (
-                          <div className="space-y-4 animate-fade-in-up">
+                          <div className="w-full max-w-sm space-y-4 animate-fade-in-up">
                               <Label htmlFor="reason" className="text-base">Alasan Tidak Hadir</Label>
                               <Textarea 
                                   id="reason"
@@ -376,7 +290,6 @@ export default function StudentDashboardPage() {
                               </div>
                           </div>
                       )}
-                    </div>
                 </div>
             )}
           </CardContent>
@@ -441,5 +354,3 @@ export default function StudentDashboardPage() {
     </main>
   )
 }
-
-    
