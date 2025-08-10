@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import * as attendanceFlow from "@/ai/flows/attendance-flow"
 import type { SheetStudent, SheetAttendance, AttendanceStatus } from "@/lib/definitions"
-import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info, Video, VideoOff, MapPin, Sparkles } from "lucide-react"
+import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info, VideoOff, MapPin, Sparkles } from "lucide-react"
 import { format, startOfWeek, startOfMonth, isWithinInterval } from "date-fns"
 import { id } from "date-fns/locale"
 import { Label } from "@/components/ui/label"
@@ -63,6 +63,7 @@ export default function StudentDashboardPage() {
   const [motivationalQuote, setMotivationalQuote] = React.useState("");
 
   const videoRef = React.useRef<HTMLVideoElement>(null)
+  const canvasRef = React.useRef<HTMLCanvasElement>(null)
   const todayString = format(new Date(), "yyyy-MM-dd");
 
   React.useEffect(() => {
@@ -91,6 +92,23 @@ export default function StudentDashboardPage() {
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.onloadedmetadata = () => {
+             if (videoRef.current && canvasRef.current) {
+                const video = videoRef.current;
+                const canvas = canvasRef.current;
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const context = canvas.getContext('2d');
+                
+                const drawFrame = () => {
+                    if (context && video.srcObject) {
+                        context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+                        requestAnimationFrame(drawFrame);
+                    }
+                }
+                drawFrame();
+             }
+          }
         }
       } catch (error) {
         console.error('Error accessing camera:', error);
@@ -130,7 +148,8 @@ export default function StudentDashboardPage() {
 
     getCameraPermission();
     getLocation();
-  }, [toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   React.useEffect(() => {
     const studentData = sessionStorage.getItem('student')
@@ -149,7 +168,7 @@ export default function StudentDashboardPage() {
           attendanceFlow.getAllAttendanceForStudent(parsedStudent.id)
         ]);
         
-        const todayRecord = todayRecords.length > 0 ? todayRecords[0] : null;
+        const todayRecord = todayRecords.find(att => att.date === todayString) || null;
         setTodaysAttendance(todayRecord);
         setAllAttendance(allRecords);
       } catch (error) {
@@ -161,6 +180,7 @@ export default function StudentDashboardPage() {
       }
     }
     fetchData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, toast, todayString])
 
   React.useEffect(() => {
@@ -198,7 +218,7 @@ export default function StudentDashboardPage() {
     
     let photoDataUri: string | undefined = undefined;
     if(status === 'present') {
-        if(!hasCameraPermission || !videoRef.current) {
+        if(!hasCameraPermission || !canvasRef.current) {
             toast({
                 title: "Kamera tidak siap",
                 description: "Pastikan Anda telah memberikan izin kamera dan kamera berfungsi.",
@@ -214,14 +234,7 @@ export default function StudentDashboardPage() {
             })
             return;
         }
-        const canvas = document.createElement('canvas');
-        canvas.width = videoRef.current.videoWidth;
-        canvas.height = videoRef.current.videoHeight;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-            photoDataUri = canvas.toDataURL('image/jpeg');
-        }
+        photoDataUri = canvasRef.current.toDataURL('image/jpeg');
     }
 
     setIsSubmitting(true);
@@ -299,8 +312,9 @@ export default function StudentDashboardPage() {
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                      <div>
                         <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                            <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
-                            {hasCameraPermission === null && (
+                             <video ref={videoRef} className="hidden" autoPlay />
+                             <canvas ref={canvasRef} className="w-full h-full object-cover" />
+                             {hasCameraPermission === null && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white">
                                     <Loader2 className="w-8 h-8 animate-spin" />
                                     <p className="mt-2">Meminta izin kamera...</p>
@@ -338,8 +352,7 @@ export default function StudentDashboardPage() {
                       {!showReasonInput ? (
                           <div className="flex flex-col gap-4">
                               <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || hasCameraPermission !== true || !location}>
-                                  {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin"/> : <Video className="h-6 w-6"/>}
-                                  Hadir (Dengan Kamera)
+                                  {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin"/> : "Hadir (Dengan Kamera)"}
                               </Button>
                               <Button size="lg" variant="outline" className="h-20 text-lg flex-col gap-1" onClick={() => setShowReasonInput(true)} disabled={isSubmitting}>
                                   <XCircle className="h-6 w-6"/>
@@ -430,3 +443,5 @@ export default function StudentDashboardPage() {
     </main>
   )
 }
+
+    
