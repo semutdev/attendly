@@ -340,15 +340,15 @@ export default function StudentDashboardPage() {
                     </div>
 
                     <div className="space-y-4">
-                      <Alert className="border-primary/50 bg-primary/5">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-primary font-semibold">Motivasi Hari Ini</AlertTitle>
-                        <AlertDescription>
-                           {motivationalQuote}
-                        </AlertDescription>
-                      </Alert>
                       {!showReasonInput ? (
                           <div className="flex flex-col gap-4">
+                              <Alert className="border-primary/50 bg-primary/5">
+                                <Sparkles className="h-4 w-4 text-primary" />
+                                <AlertTitle className="text-primary font-semibold">Motivasi Hari Ini</AlertTitle>
+                                <AlertDescription>
+                                   {motivationalQuote}
+                                </AlertDescription>
+                              </Alert>
                               <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || hasCameraPermission !== true || !location}>
                                   {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin"/> : "Hadir (Dengan Kamera)"}
                               </Button>
