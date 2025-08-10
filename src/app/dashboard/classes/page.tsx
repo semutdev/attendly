@@ -28,18 +28,40 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { PlusCircle, MoreHorizontal, Pencil, Trash2 } from "lucide-react"
-import { classes as initialClasses, type Class } from "@/lib/data"
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { addClass, deleteClass, getClasses, updateClass, SheetClass } from "@/ai/flows/sheet-flow"
 
 export default function ClassesPage() {
   const { toast } = useToast()
-  const [classes, setClasses] = React.useState<Class[]>(initialClasses)
+  const [classes, setClasses] = React.useState<SheetClass[]>([])
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
-  const [currentClass, setCurrentClass] = React.useState<Class | null>(null)
+  const [currentClass, setCurrentClass] = React.useState<SheetClass | null>(null)
   const [className, setClassName] = React.useState("")
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  const openDialog = (cls: Class | null = null) => {
+  const fetchClasses = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedClasses = await getClasses();
+      setClasses(fetchedClasses);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Gagal memuat data",
+        description: "Tidak dapat mengambil data kelas dari Google Sheet.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  React.useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  const openDialog = (cls: SheetClass | null = null) => {
     setCurrentClass(cls)
     setClassName(cls ? cls.name : "")
     setIsDialogOpen(true)
@@ -51,30 +73,43 @@ export default function ClassesPage() {
     setClassName("")
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!className) return
 
-    if (currentClass) {
-      // Edit
-      setClasses(classes.map(c => c.id === currentClass.id ? { ...c, name: className } : c))
-      toast({ title: "Sukses!", description: "Nama kelas berhasil diperbarui." })
-    } else {
-      // Add
-      const newClass: Class = {
-        id: `C${Date.now()}`,
-        name: className,
-        students: []
+    try {
+      if (currentClass) {
+        await updateClass({ id: currentClass.id, name: className });
+        toast({ title: "Sukses!", description: "Nama kelas berhasil diperbarui." })
+      } else {
+        await addClass({ name: className });
+        toast({ title: "Sukses!", description: "Kelas baru berhasil ditambahkan." })
       }
-      setClasses([...classes, newClass])
-      toast({ title: "Sukses!", description: "Kelas baru berhasil ditambahkan." })
+      fetchClasses();
+      closeDialog();
+    } catch (error) {
+       console.error(error);
+       toast({
+        title: "Gagal menyimpan",
+        description: "Terjadi kesalahan saat menyimpan data.",
+        variant: "destructive",
+      });
     }
-    closeDialog()
   }
 
-  const handleDelete = (classId: string) => {
-    setClasses(classes.filter(c => c.id !== classId))
-    toast({ title: "Sukses!", description: "Kelas berhasil dihapus.", variant: "destructive" })
+  const handleDelete = async (classId: string) => {
+    try {
+      await deleteClass(classId);
+      toast({ title: "Sukses!", description: "Kelas berhasil dihapus." });
+      fetchClasses();
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Gagal menghapus",
+        description: "Terjadi kesalahan saat menghapus data.",
+        variant: "destructive",
+      });
+    }
   }
 
   return (
@@ -82,7 +117,7 @@ export default function ClassesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold font-headline">Manajemen Kelas</h1>
-          <p className="text-muted-foreground">Tambah, ubah, atau hapus data kelas Anda.</p>
+          <p className="text-muted-foreground">Tambah, ubah, atau hapus data kelas dari Google Sheet.</p>
         </div>
         <Button onClick={() => openDialog()}>
           <PlusCircle className="mr-2 h-4 w-4" /> Tambah Kelas
@@ -92,64 +127,68 @@ export default function ClassesPage() {
       <Card>
         <CardHeader>
           <CardTitle>Daftar Kelas</CardTitle>
-          <CardDescription>Berikut adalah daftar semua kelas yang Anda ajar.</CardDescription>
+          <CardDescription>Berikut adalah daftar semua kelas yang datanya diambil dari Google Sheet.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID Kelas</TableHead>
-                <TableHead>Nama Kelas</TableHead>
-                <TableHead>Jumlah Siswa</TableHead>
-                <TableHead className="text-right">Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {classes.map((cls) => (
-                <TableRow key={cls.id}>
-                  <TableCell className="font-mono text-sm">{cls.id}</TableCell>
-                  <TableCell className="font-medium">{cls.name}</TableCell>
-                  <TableCell>{cls.students.length} siswa</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Buka menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openDialog(cls)}>
-                          <Pencil className="mr-2 h-4 w-4" />
-                          <span>Ubah</span>
-                        </DropdownMenuItem>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                               <Trash2 className="mr-2 h-4 w-4" />
-                               <span>Hapus</span>
-                            </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tindakan ini tidak dapat diurungkan. Ini akan menghapus kelas secara permanen.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Batal</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(cls.id)}>Hapus</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-48">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID Kelas</TableHead>
+                  <TableHead>Nama Kelas</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {classes.map((cls) => (
+                  <TableRow key={cls.id}>
+                    <TableCell className="font-mono text-sm">{cls.id}</TableCell>
+                    <TableCell className="font-medium">{cls.name}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Buka menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openDialog(cls)}>
+                            <Pencil className="mr-2 h-4 w-4" />
+                            <span>Ubah</span>
+                          </DropdownMenuItem>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Hapus</span>
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tindakan ini tidak dapat diurungkan. Ini akan menghapus kelas secara permanen dari Google Sheet.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(cls.id)}>Hapus</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 
