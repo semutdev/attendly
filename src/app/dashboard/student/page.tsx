@@ -61,8 +61,11 @@ export default function StudentDashboardPage() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         console.error('Camera API not supported.');
         setHasCameraPermission(false);
-        // We can't use toast here as it's not a dependency.
-        // A static alert will have to do if the API isn't supported.
+        toast({
+          variant: 'destructive',
+          title: 'Kamera Tidak Didukung',
+          description: 'Browser Anda tidak mendukung akses kamera.',
+        });
         return;
       }
       try {
@@ -75,10 +78,16 @@ export default function StudentDashboardPage() {
       } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Akses Kamera Ditolak',
+          description: 'Mohon izinkan akses kamera di browser Anda untuk melanjutkan.',
+        });
       }
     };
 
     getCameraPermission();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
@@ -239,7 +248,7 @@ export default function StudentDashboardPage() {
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                      <div>
                         <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                            <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                            <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
                             {hasCameraPermission === null && (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white">
                                     <Loader2 className="w-8 h-8 animate-spin" />
