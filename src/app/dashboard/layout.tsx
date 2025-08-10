@@ -15,18 +15,15 @@ import {
 } from "@/components/ui/sidebar"
 import {
   LayoutDashboard,
-  CheckSquare,
-  FileText,
   LogOut,
   User,
   School,
-  Book,
+  FileText,
 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { Logo } from "@/components/logo"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 export default function DashboardLayout({
@@ -38,10 +35,9 @@ export default function DashboardLayout({
 
   const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { href: "/dashboard/attendance", icon: CheckSquare, label: "Absensi" },
     { href: "/dashboard/classes", icon: School, label: "Kelas" },
-    { href: "/dashboard/subjects", icon: Book, label: "Pelajaran" },
     { href: "/dashboard/reports", icon: FileText, label: "Laporan" },
+    { href: "/dashboard/profile", icon: User, label: "Profil" },
   ]
 
   return (
@@ -50,7 +46,6 @@ export default function DashboardLayout({
         <SidebarHeader>
           <div className="flex items-center justify-between">
              <Logo />
-             <SidebarTrigger />
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -92,6 +87,10 @@ export default function DashboardLayout({
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6 md:hidden">
+          <Logo />
+          <SidebarTrigger />
+        </header>
         <div className="p-4 sm:p-6 lg:p-8 animate-fade-in-up">
             {children}
         </div>

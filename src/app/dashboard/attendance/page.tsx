@@ -12,50 +12,99 @@ import { Label } from "@/components/ui/label"
 import { CalendarIcon, Check, CircleUser } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { classes, subjects, type Student } from "@/lib/data"
 import { useToast } from "@/hooks/use-toast"
+import type { SheetClass, SheetStudent, SheetSubject, StudentAttendanceInput } from "@/lib/definitions"
+import { getClasses } from "@/ai/flows/sheet-flow"
+import { getSubjects } from "@/ai/flows/subject-flow"
+import { getStudentsByClass } from "@/ai/flows/student-flow"
+import { markStudentAttendance } from "@/ai/flows/attendance-flow"
+
 
 export default function AttendancePage() {
   const { toast } = useToast()
   const [date, setDate] = React.useState<Date | undefined>(new Date())
   const [selectedClass, setSelectedClass] = React.useState<string | undefined>()
   const [selectedSubject, setSelectedSubject] = React.useState<string | undefined>()
-  const [students, setStudents] = React.useState<Student[]>([])
-  const [attendance, setAttendance] = React.useState<Record<string, string>>({})
+  
+  const [allClasses, setAllClasses] = React.useState<SheetClass[]>([])
+  const [allSubjects, setAllSubjects] = React.useState<SheetSubject[]>([])
+  const [students, setStudents] = React.useState<SheetStudent[]>([])
+  
+  const [attendance, setAttendance] = React.useState<Record<string, 'present' | 'absent' | 'late' | 'excused'>>({})
 
   React.useEffect(() => {
-    if (selectedClass) {
-      const classData = classes.find(c => c.id === selectedClass)
-      const studentList = classData ? classData.students : []
-      setStudents(studentList)
-      
-      const initialAttendance = studentList.reduce((acc, student) => {
-        acc[student.id] = 'present'
-        return acc
-      }, {} as Record<string, string>)
-      setAttendance(initialAttendance)
-    } else {
-      setStudents([])
-      setAttendance({})
+    async function fetchInitialData() {
+        try {
+            const [fetchedClasses, fetchedSubjects] = await Promise.all([
+                getClasses(),
+                getSubjects()
+            ]);
+            setAllClasses(fetchedClasses);
+            setAllSubjects(fetchedSubjects);
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Gagal memuat data awal", variant: "destructive" });
+        }
     }
-  }, [selectedClass])
+    fetchInitialData();
+  }, [toast]);
 
-  const handleStatusChange = (studentId: string, status: string) => {
+
+  React.useEffect(() => {
+    async function fetchStudents() {
+      if (selectedClass) {
+        try {
+            const studentList = await getStudentsByClass(selectedClass);
+            setStudents(studentList);
+            
+            const initialAttendance = studentList.reduce((acc, student) => {
+                acc[student.id] = 'present'
+                return acc
+            }, {} as Record<string, 'present' | 'absent' | 'late' | 'excused'>)
+            setAttendance(initialAttendance)
+        } catch(error) {
+            console.error(error);
+            toast({ title: "Gagal memuat data siswa", variant: "destructive" });
+            setStudents([]);
+        }
+      } else {
+        setStudents([])
+        setAttendance({})
+      }
+    }
+    fetchStudents();
+  }, [selectedClass, toast])
+
+  const handleStatusChange = (studentId: string, status: 'present' | 'absent' | 'late' | 'excused') => {
     setAttendance(prev => ({ ...prev, [studentId]: status }))
   }
   
-  const handleSubmit = () => {
-    console.log({
-      date,
-      class: selectedClass,
-      subject: selectedSubject,
-      attendance,
-    })
-    toast({
-      title: "Absensi Tersimpan!",
-      description: `Absensi untuk kelas ${classes.find(c=>c.id === selectedClass)?.name} pada ${format(date!, 'PPP')} telah berhasil disimpan.`,
-      className: "bg-green-100 border-green-300 text-green-800",
-    })
+  const handleSubmit = async () => {
+    if(!isFormComplete) return;
+
+    const attendancePromises = students.map(student => {
+        const studentData: StudentAttendanceInput = {
+            date: format(date, "yyyy-MM-dd"),
+            classId: selectedClass,
+            subjectId: selectedSubject,
+            studentId: student.id,
+            studentName: student.name,
+            status: attendance[student.id]
+        }
+        return markStudentAttendance(studentData);
+    });
+
+    try {
+        await Promise.all(attendancePromises);
+        toast({
+            title: "Absensi Tersimpan!",
+            description: `Absensi untuk kelas terpilih pada ${format(date, 'PPP')} telah berhasil disimpan.`,
+            className: "bg-green-100 border-green-300 text-green-800",
+        });
+    } catch(error) {
+        console.error(error);
+        toast({ title: "Gagal menyimpan absensi", variant: "destructive" });
+    }
   }
 
   const isFormComplete = date && selectedClass && selectedSubject;
@@ -78,7 +127,7 @@ export default function AttendancePage() {
             <Select onValueChange={setSelectedClass}>
               <SelectTrigger id="class"><SelectValue placeholder="Pilih Kelas" /></SelectTrigger>
               <SelectContent>
-                {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                {allClasses.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -87,7 +136,7 @@ export default function AttendancePage() {
             <Select onValueChange={setSelectedSubject}>
               <SelectTrigger id="subject"><SelectValue placeholder="Pilih Mata Pelajaran" /></SelectTrigger>
               <SelectContent>
-                {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                {allSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -144,7 +193,7 @@ export default function AttendancePage() {
                         <TableCell colSpan={4}>
                             <RadioGroup 
                             value={attendance[student.id]}
-                            onValueChange={(status) => handleStatusChange(student.id, status)}
+                            onValueChange={(status) => handleStatusChange(student.id, status as 'present' | 'absent' | 'late' | 'excused')}
                             className="grid grid-cols-4 gap-4"
                             >
                                 <Label htmlFor={`present-${student.id}`} className="flex items-center justify-center p-2 rounded-md cursor-pointer [&:has([data-state=checked])]:bg-primary/10 [&:has([data-state=checked])]:text-primary font-semibold transition-colors">

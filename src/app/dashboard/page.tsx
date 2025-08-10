@@ -4,10 +4,11 @@ import * as React from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2, XCircle, Clock, Info, UserCheck, UserX, BarChartHorizontalBig, School, Loader2 } from "lucide-react"
+import { CheckCircle2, XCircle, Clock, Info, UserCheck, UserX, BarChartHorizontalBig, School, Loader2, UserMinus } from "lucide-react"
 import { AttendanceChart } from "./components/attendance-chart"
-import type { AttendanceStatus, SheetAttendance } from "@/lib/definitions"
+import type { AttendanceStatus, SheetAttendance, SheetStudent } from "@/lib/definitions"
 import { getAllAttendance, getClasses } from "@/ai/flows/dashboard-flow"
+import { getAllStudents } from "@/services/sheets"
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -30,6 +31,7 @@ export default function DashboardPage() {
         overallAttendanceRate: 0,
         presentToday: 0,
         absentToday: 0,
+        notYetAttendedToday: 0,
         totalClasses: 0,
     })
     const [allAttendance, setAllAttendance] = React.useState<SheetAttendance[]>([])
@@ -39,21 +41,25 @@ export default function DashboardPage() {
         async function fetchData() {
             setIsLoading(true)
             try {
-                const [attendanceRecords, classes] = await Promise.all([
+                const [attendanceRecords, classes, allStudents] = await Promise.all([
                     getAllAttendance(),
-                    getClasses()
+                    getClasses(),
+                    getAllStudents(),
                 ])
 
                 const todayStr = format(new Date(), "yyyy-MM-dd")
                 const todayAttendance = attendanceRecords.filter(a => a.date === todayStr)
+                const studentIdsAttendedToday = new Set(todayAttendance.map(a => a.studentId));
 
                 const presentCount = attendanceRecords.filter(a => a.status === 'present' || a.status === 'late').length
                 const overallRate = attendanceRecords.length > 0 ? (presentCount / attendanceRecords.length * 100) : 0
+                const notYetAttendedCount = allStudents.length - studentIdsAttendedToday.size;
 
                 setStats({
                     overallAttendanceRate: overallRate,
                     presentToday: todayAttendance.filter(a => a.status === 'present' || a.status === 'late').length,
-                    absentToday: todayAttendance.filter(a => a.status === 'absent').length,
+                    absentToday: todayAttendance.filter(a => a.status === 'absent' || a.status === 'excused').length,
+                    notYetAttendedToday: notYetAttendedCount,
                     totalClasses: classes.length,
                 })
                 
@@ -105,7 +111,7 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Absen Hari Ini</CardTitle>
+            <CardTitle className="text-sm font-medium">Izin/Sakit Hari Ini</CardTitle>
             <UserX className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
@@ -113,14 +119,14 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Siswa yang tidak hadir</p>
           </CardContent>
         </Card>
-         <Card>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Kelas</CardTitle>
-            <School className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Belum Absen Hari Ini</CardTitle>
+            <UserMinus className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold">{stats.totalClasses}</div>}
-            <p className="text-xs text-muted-foreground">Jumlah kelas yang diajar</p>
+            {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : <div className="text-2xl font-bold">{stats.notYetAttendedToday}</div>}
+            <p className="text-xs text-muted-foreground">Total dari semua kelas</p>
           </CardContent>
         </Card>
       </div>
