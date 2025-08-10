@@ -99,7 +99,7 @@ export async function deleteClass(id: string): Promise<void> {
     const sheets = await getSheetsApi();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: FULL_RANGE, // We need the full range to get the correct row index
+      range: FULL_RANGE,
     });
   
     const rows = response.data.values;
@@ -111,31 +111,10 @@ export async function deleteClass(id: string): Promise<void> {
       throw new Error(`Class with ID ${id} not found.`);
     }
 
-    const sheetId = await getSheetId(sheets, SPREADSHEET_ID, SHEET_NAME);
-    if (sheetId === null) {
-        throw new Error(`Sheet with name "${SHEET_NAME}" not found.`);
-    }
+    const sheetRowNumber = rowIndex + 1;
 
-    await sheets.spreadsheets.batchUpdate({
+    await sheets.spreadsheets.values.clear({
         spreadsheetId: SPREADSHEET_ID,
-        requestBody: {
-            requests: [{
-                deleteDimension: {
-                    range: {
-                        sheetId: sheetId,
-                        dimension: "ROWS",
-                        startIndex: rowIndex,
-                        endIndex: rowIndex + 1
-                    }
-                }
-            }]
-        }
+        range: `${SHEET_NAME}!A${sheetRowNumber}:B${sheetRowNumber}`,
     });
-}
-
-async function getSheetId(sheets: any, spreadsheetId: string | undefined, sheetName: string): Promise<number | null> {
-    if (!spreadsheetId) return null;
-    const response = await sheets.spreadsheets.get({ spreadsheetId });
-    const sheet = response.data.sheets?.find(s => s.properties?.title === sheetName);
-    return sheet?.properties?.sheetId || null;
 }
