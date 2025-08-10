@@ -13,3 +13,7 @@ export async function markStudentAttendance(input: StudentAttendanceInput): Prom
 export async function getStudentAttendanceForDate(studentId: string, date: string): Promise<SheetAttendance[]> {
   return await sheetService.getStudentAttendanceForDate(studentId, date);
 }
+
+export async function getAllAttendanceForStudent(studentId: string): Promise<SheetAttendance[]> {
+    return await sheetService.getAllAttendanceForStudent(studentId);
+}

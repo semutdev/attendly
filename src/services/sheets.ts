@@ -2,7 +2,7 @@
  * @fileoverview Service for interacting with the Google Sheets API.
  */
 import { google } from 'googleapis';
-import type { AddClassInput, SheetClass, AddSubjectInput, SheetSubject, SheetStudent, AddStudentInput, UpdateStudentInput, StudentAttendanceInput, SheetAttendance } from '@/lib/definitions';
+import type { AddClassInput, SheetClass, AddSubjectInput, SheetSubject, SheetStudent, AddStudentInput, UpdateStudentInput, StudentAttendanceInput, SheetAttendance, AttendanceStatus } from '@/lib/definitions';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -278,10 +278,10 @@ export async function updateStudent(studentData: UpdateStudentInput): Promise<vo
 
   const sheetRowNumber = rowIndex + 1;
 
-  // Note: We are updating from column B (name) to D (password). classId is not updated here.
+  // Note: We are updating from column B (name) to E (password). classId is not updated here.
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${STUDENTS_SHEET_NAME}!B${sheetRowNumber}:D${sheetRowNumber}`,
+    range: `${STUDENTS_SHEET_NAME}!B${sheetRowNumber}:E${sheetRowNumber}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[studentData.name, studentData.username, studentData.password]],
@@ -338,7 +338,18 @@ export async function markStudentAttendance(attendanceData: StudentAttendanceInp
     });
 }
 
-export async function getStudentAttendanceForDate(studentId: string, date: string): Promise<SheetAttendance[]> {
+const mapRowToAttendance = (row: any[]): SheetAttendance => ({
+    id: row[0],
+    date: row[1],
+    classId: row[2],
+    subjectId: row[3],
+    studentId: row[4],
+    studentName: row[5],
+    status: row[6] as AttendanceStatus,
+    reason: row[7],
+});
+
+export async function getAllAttendanceForStudent(studentId: string): Promise<SheetAttendance[]> {
     const sheets = await getSheetsApi();
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
@@ -347,18 +358,16 @@ export async function getStudentAttendanceForDate(studentId: string, date: strin
 
     const rows = response.data.values;
     if (rows && rows.length) {
-        const allAttendance = rows.map((row) => ({
-            id: row[0],
-            date: row[1],
-            classId: row[2],
-            subjectId: row[3],
-            studentId: row[4],
-            studentName: row[5],
-            status: row[6],
-            reason: row[7],
-        })).filter(att => att.id && att.studentId && att.date);
-
-        return allAttendance.filter(att => att.studentId === studentId && att.date === date);
+        return rows
+            .map(mapRowToAttendance)
+            .filter(att => att.id && att.studentId === studentId)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
     return [];
+}
+
+
+export async function getStudentAttendanceForDate(studentId: string, date: string): Promise<SheetAttendance[]> {
+    const allAttendance = await getAllAttendanceForStudent(studentId);
+    return allAttendance.filter(att => att.date === date);
 }
