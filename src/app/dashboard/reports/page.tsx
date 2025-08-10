@@ -5,54 +5,47 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
-import type { SheetStudent, SheetAttendance, SheetClass } from "@/lib/definitions"
+import type { SheetAttendance, AttendanceStatus } from "@/lib/definitions"
 import { getAllAttendance } from "@/ai/flows/dashboard-flow"
-import { getAllStudents, getClasses } from "@/services/sheets"
-import { Download, Printer, Loader2 } from "lucide-react"
-import { format } from "date-fns"
+import { Download, Printer, Loader2, Calendar as CalendarIcon, CheckCircle2, XCircle, Clock, Info } from "lucide-react"
+import { DateRange } from "react-day-picker"
+import { format, subDays, formatISO, parseISO } from "date-fns"
+import { id } from "date-fns/locale"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 
-interface UnattendedStudent extends SheetStudent {
-  className: string;
+const getStatusBadge = (status: AttendanceStatus) => {
+  const variants: Record<AttendanceStatus, { variant: "default" | "secondary" | "destructive" | "outline", icon: React.ReactNode, text: string, className: string }> = {
+    present: { variant: "default", icon: <CheckCircle2 className="h-4 w-4" />, text: "Hadir", className: "bg-green-500/10 text-green-700 border-green-500/20 hover:bg-green-500/20"},
+    absent: { variant: "destructive", icon: <XCircle className="h-4 w-4" />, text: "Absen", className: "bg-red-500/10 text-red-700 border-red-500/20 hover:bg-red-500/20" },
+    late: { variant: "secondary", icon: <Clock className="h-4 w-4" />, text: "Terlambat", className: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20 hover:bg-yellow-500/20" },
+    excused: { variant: "outline", icon: <Info className="h-4 w-4" />, text: "Izin", className: "bg-blue-500/10 text-blue-700 border-blue-500/20 hover:bg-blue-500/20" },
+  }
+  const { variant, icon, text, className } = variants[status];
+  return <Badge variant={variant} className={cn("gap-1.5", className)}>{icon}{text}</Badge>
 }
+
 
 export default function ReportsPage() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState(true)
-  const [unattendedStudents, setUnattendedStudents] = React.useState<UnattendedStudent[]>([])
-  const [allClasses, setAllClasses] = React.useState<SheetClass[]>([])
-  const [selectedClassId, setSelectedClassId] = React.useState<string>("all")
-  
-  const todayStr = format(new Date(), "yyyy-MM-dd");
+  const [allAttendance, setAllAttendance] = React.useState<SheetAttendance[]>([])
+  const [statusFilter, setStatusFilter] = React.useState<AttendanceStatus | "all">("all")
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  })
 
   React.useEffect(() => {
     async function fetchData() {
       setIsLoading(true)
       try {
-        const [attendanceRecords, students, classes] = await Promise.all([
-          getAllAttendance(),
-          getAllStudents(),
-          getClasses(),
-        ])
-        setAllClasses(classes);
-
-        const attendedStudentIds = new Set(
-          attendanceRecords
-            .filter(record => record.date === todayStr)
-            .map(record => record.studentId)
-        )
-
-        const classMap = new Map(classes.map(c => [c.id, c.name]));
-
-        const unattended = students
-          .filter(student => !attendedStudentIds.has(student.id))
-          .map(student => ({
-            ...student,
-            className: classMap.get(student.classId) || 'N/A'
-          }));
-
-        setUnattendedStudents(unattended)
+        const attendanceRecords = await getAllAttendance()
+        setAllAttendance(attendanceRecords)
       } catch (error) {
         console.error(error)
         toast({
@@ -65,64 +58,141 @@ export default function ReportsPage() {
       }
     }
     fetchData()
-  }, [toast, todayStr])
-  
-  const filteredStudents = React.useMemo(() => {
-    if (selectedClassId === "all") {
-      return unattendedStudents;
-    }
-    return unattendedStudents.filter(student => student.classId === selectedClassId);
-  }, [unattendedStudents, selectedClassId]);
+  }, [toast])
 
+  const filteredData = React.useMemo(() => {
+    return allAttendance
+      .filter(record => {
+        // Status filter
+        if (statusFilter !== "all" && record.status !== statusFilter) {
+          return false
+        }
+        // Date range filter
+        if (dateRange?.from && dateRange?.to) {
+          const recordDate = parseISO(record.date)
+          return recordDate >= dateRange.from && recordDate <= dateRange.to
+        }
+        return true
+      })
+  }, [allAttendance, statusFilter, dateRange])
+
+  const formatRecordTimestamp = (record: SheetAttendance): string => {
+    const timestamp = Number(record.id.replace('ATT',''));
+    if (isNaN(timestamp)) {
+      return format(parseISO(record.date), "dd/MM/yyyy");
+    }
+    return format(new Date(timestamp), "dd/MM/yyyy HH:mm:ss");
+  }
 
   const exportToCSV = () => {
-    const headers = ["ID Siswa", "Nama Siswa", "Kelas"];
-    const rows = filteredStudents.map(d => [d.id, d.name, d.className].join(","));
+    const headers = ["ID", "Nama Siswa", "Tanggal & Waktu", "Status", "Lokasi", "Alasan"];
+    const rows = filteredData.map(d => 
+        [
+            d.studentId, 
+            d.studentName, 
+            `"${formatRecordTimestamp(d)}"`,
+            d.status, 
+            `"${d.location || '-'}"`,
+            `"${d.reason || '-'}"`
+        ].join(",")
+    );
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `laporan_belum_absen_${todayStr}.csv`);
+    link.setAttribute("download", `laporan_absensi_${format(new Date(), "yyyy-MM-dd")}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
 
-  const exportToPDF = () => {
+  const printReport = () => {
     window.print();
   }
+
 
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-3xl font-bold font-headline">Laporan Siswa Belum Absen</h1>
-        <p className="text-muted-foreground">Daftar siswa yang belum melakukan absensi untuk hari ini ({format(new Date(), "dd MMMM yyyy")}).</p>
+        <h1 className="text-3xl font-bold font-headline">Laporan Absensi</h1>
+        <p className="text-muted-foreground">Filter dan lihat riwayat absensi siswa secara mendetail.</p>
       </div>
+
+      <Card>
+        <CardHeader>
+            <CardTitle className="font-headline">Filter Laporan</CardTitle>
+            <CardDescription>Gunakan filter di bawah untuk menyeleksi data yang ingin Anda lihat.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+             <div className="space-y-1.5">
+                <Label htmlFor="status-filter">Filter Status</Label>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as any)}>
+                  <SelectTrigger id="status-filter">
+                    <SelectValue placeholder="Pilih Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Status</SelectItem>
+                    <SelectItem value="present">Hadir</SelectItem>
+                    <SelectItem value="late">Terlambat</SelectItem>
+                    <SelectItem value="excused">Izin/Sakit</SelectItem>
+                    <SelectItem value="absent">Absen</SelectItem>
+                  </SelectContent>
+                </Select>
+            </div>
+             <div className="space-y-1.5">
+              <Label>Rentang Tanggal</Label>
+               <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="date"
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dateRange && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "LLL dd, y")} -{" "}
+                            {format(dateRange.to, "LLL dd, y")}
+                          </>
+                        ) : (
+                          format(dateRange.from, "LLL dd, y")
+                        )
+                      ) : (
+                        <span>Pilih tanggal</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                    />
+                  </PopoverContent>
+                </Popover>
+            </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between">
             <div>
                 <CardTitle className="font-headline">Hasil Laporan</CardTitle>
-                <CardDescription>Menampilkan {filteredStudents.length} siswa yang belum absen.</CardDescription>
+                <CardDescription>Menampilkan {filteredData.length} data sesuai filter yang dipilih.</CardDescription>
             </div>
             <div className="flex gap-2">
-                <Button variant="outline" onClick={exportToCSV} disabled={isLoading || filteredStudents.length === 0}> <Download className="mr-2 h-4 w-4"/> Ekspor CSV</Button>
-                <Button variant="outline" onClick={exportToPDF} disabled={isLoading || filteredStudents.length === 0}> <Printer className="mr-2 h-4 w-4"/> Cetak PDF</Button>
+                <Button variant="outline" onClick={exportToCSV} disabled={isLoading || filteredData.length === 0}> <Download className="mr-2 h-4 w-4"/> Ekspor CSV</Button>
+                <Button variant="outline" onClick={printReport} disabled={isLoading || filteredData.length === 0}> <Printer className="mr-2 h-4 w-4"/> Cetak PDF</Button>
             </div>
         </CardHeader>
         <CardContent>
-            <div className="max-w-xs mb-4">
-                <Label htmlFor="class-filter">Filter Berdasarkan Kelas</Label>
-                <Select value={selectedClassId} onValueChange={setSelectedClassId}>
-                  <SelectTrigger id="class-filter">
-                    <SelectValue placeholder="Pilih Kelas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua Kelas</SelectItem>
-                    {allClasses.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-            </div>
             {isLoading ? (
                 <div className="flex justify-center items-center h-48">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -131,22 +201,24 @@ export default function ReportsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Nama Siswa</TableHead>
-                            <TableHead>Kelas</TableHead>
-                            <TableHead>Username</TableHead>
+                            <TableHead>Siswa</TableHead>
+                            <TableHead>Waktu Absen</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Lokasi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {filteredStudents.length > 0 ? filteredStudents.map((student) => (
-                            <TableRow key={student.id}>
-                                <TableCell className="font-medium">{student.name}</TableCell>
-                                <TableCell>{student.className}</TableCell>
-                                <TableCell>{student.username}</TableCell>
+                        {filteredData.length > 0 ? filteredData.map((record) => (
+                            <TableRow key={record.id}>
+                                <TableCell className="font-medium">{record.studentName}</TableCell>
+                                <TableCell>{formatRecordTimestamp(record)}</TableCell>
+                                <TableCell>{getStatusBadge(record.status)}</TableCell>
+                                <TableCell className="font-mono text-xs">{record.location || '-'}</TableCell>
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={3} className="text-center h-24">
-                                    Semua siswa sudah melakukan absensi hari ini.
+                                <TableCell colSpan={4} className="text-center h-24">
+                                    Tidak ada data yang cocok dengan filter yang dipilih.
                                 </TableCell>
                             </TableRow>
                         )}

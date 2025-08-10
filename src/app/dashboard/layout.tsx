@@ -23,7 +23,6 @@ import {
 import { usePathname } from "next/navigation"
 import { Logo } from "@/components/logo"
 import { Separator } from "@/components/ui/separator"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 
 export default function DashboardLayout({
@@ -54,7 +53,7 @@ export default function DashboardLayout({
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  isActive={pathname === item.href}
+                  isActive={pathname.startsWith(item.href) && (item.href !== '/dashboard' || pathname === '/dashboard')}
                   tooltip={item.label}
                 >
                   <Link href={item.href}>
@@ -68,16 +67,6 @@ export default function DashboardLayout({
         </SidebarContent>
         <SidebarFooter>
            <Separator className="my-2" />
-           <div className="flex items-center gap-2 p-2">
-            <Avatar>
-              <AvatarImage src="https://placehold.co/100x100.png" alt="User" />
-              <AvatarFallback>WK</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col text-sm group-data-[collapsible=icon]:hidden">
-              <span className="font-semibold text-foreground">Wali Kelas</span>
-              <span className="text-muted-foreground">teacher@school.com</span>
-            </div>
-          </div>
            <SidebarMenuButton asChild tooltip="Keluar">
             <Link href="/">
               <LogOut />
