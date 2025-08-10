@@ -80,8 +80,8 @@ export default function StudentsPage({ params }: { params: { classId: string } }
     if (student) {
       setFormState({
         name: student.name,
-        username: student.username,
-        password: student.password,
+        username: student.username || "",
+        password: student.password || "",
       });
     } else {
       setFormState({ name: "", username: "", password: "" });
