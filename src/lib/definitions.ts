@@ -65,6 +65,7 @@ export const SheetAttendanceSchema = z.object({
     status: AttendanceStatusSchema,
     subjectId: z.string().optional(),
     reason: z.string().optional(),
+    photoDataUri: z.string().optional(),
 });
 export type SheetAttendance = z.infer<typeof SheetAttendanceSchema>;
 
@@ -76,5 +77,6 @@ export const StudentAttendanceInputSchema = z.object({
   status: AttendanceStatusSchema,
   subjectId: z.string().optional(),
   reason: z.string().optional(),
+  photoDataUri: z.string().optional(),
 });
 export type StudentAttendanceInput = z.infer<typeof StudentAttendanceInputSchema>;

@@ -24,7 +24,7 @@ const SUBJECTS_DATA_RANGE = `${SUBJECTS_SHEET_NAME}!A2:B`;
 const SUBJECTS_FULL_RANGE = `${SUBJECTS_SHEET_NAME}!A:B`;
 const STUDENTS_DATA_RANGE = `${STUDENTS_SHEET_NAME}!A2:E`;
 const STUDENTS_FULL_RANGE = `${STUDENTS_SHEET_NAME}!A:E`;
-const ATTENDANCE_DATA_RANGE = `${ATTENDANCE_SHEET_NAME}!A2:H`;
+const ATTENDANCE_DATA_RANGE = `${ATTENDANCE_SHEET_NAME}!A2:I`;
 
 
 function getAuth() {
@@ -332,7 +332,8 @@ export async function markStudentAttendance(attendanceData: StudentAttendanceInp
                 attendanceData.studentId,
                 attendanceData.studentName,
                 attendanceData.status,
-                attendanceData.reason || '' // Optional
+                attendanceData.reason || '', // Optional
+                attendanceData.photoDataUri || '' // Optional
             ]],
         },
     });
@@ -347,6 +348,7 @@ const mapRowToAttendance = (row: any[]): SheetAttendance => ({
     studentName: row[5],
     status: row[6] as AttendanceStatus,
     reason: row[7],
+    photoDataUri: row[8],
 });
 
 export async function getAllAttendanceForStudent(studentId: string): Promise<SheetAttendance[]> {

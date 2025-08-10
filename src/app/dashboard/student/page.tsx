@@ -139,15 +139,24 @@ export default function StudentDashboardPage() {
         return;
     }
     
-    // In a future step, we would capture the photo here.
-    // For now, we'll just check permission.
-    if(status === 'present' && !hasCameraPermission) {
-        toast({
-            title: "Kamera tidak siap",
-            description: "Pastikan Anda telah memberikan izin kamera untuk melakukan absensi.",
-            variant: "destructive"
-        })
-        return;
+    let photoDataUri: string | undefined = undefined;
+    if(status === 'present') {
+        if(!hasCameraPermission || !videoRef.current) {
+            toast({
+                title: "Kamera tidak siap",
+                description: "Pastikan Anda telah memberikan izin kamera dan kamera berfungsi.",
+                variant: "destructive"
+            })
+            return;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth;
+        canvas.height = videoRef.current.videoHeight;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+            photoDataUri = canvas.toDataURL('image/jpeg');
+        }
     }
 
     setIsLoading(true);
@@ -158,7 +167,8 @@ export default function StudentDashboardPage() {
             classId: student.classId,
             date: todayString,
             status: status,
-            reason: status === 'excused' ? reason : undefined
+            reason: status === 'excused' ? reason : undefined,
+            photoDataUri: photoDataUri,
         });
         
         const fetchedAttendance = await attendanceFlow.getStudentAttendanceForDate(student.id, todayString);
