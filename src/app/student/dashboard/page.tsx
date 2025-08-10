@@ -11,7 +11,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import * as attendanceFlow from "@/ai/flows/attendance-flow"
 import type { SheetStudent, SheetAttendance, AttendanceStatus } from "@/lib/definitions"
-import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info, Video, VideoOff } from "lucide-react"
+import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info, Video, VideoOff, MapPin } from "lucide-react"
 import { format, startOfWeek, startOfMonth, isWithinInterval } from "date-fns"
 import { id } from "date-fns/locale"
 import { Label } from "@/components/ui/label"
@@ -45,6 +45,8 @@ export default function StudentDashboardPage() {
   const [reason, setReason] = React.useState("")
   const [showReasonInput, setShowReasonInput] = React.useState(false)
   const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean | null>(null);
+  const [location, setLocation] = React.useState<{ latitude: number; longitude: number } | null>(null)
+  const [locationError, setLocationError] = React.useState<string | null>(null)
   const videoRef = React.useRef<HTMLVideoElement>(null)
 
   const todayString = format(new Date(), "yyyy-MM-dd");
@@ -86,7 +88,33 @@ export default function StudentDashboardPage() {
       }
     };
 
+    const getLocation = () => {
+        if (!navigator.geolocation) {
+            setLocationError("Geolocation tidak didukung oleh browser Anda.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setLocation({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                });
+                setLocationError(null);
+            },
+            () => {
+                setLocationError("Gagal mendapatkan lokasi. Mohon izinkan akses lokasi.");
+                 toast({
+                    variant: 'destructive',
+                    title: 'Akses Lokasi Ditolak',
+                    description: 'Mohon izinkan akses lokasi di browser Anda untuk melanjutkan.',
+                });
+            }
+        );
+    };
+
     getCameraPermission();
+    getLocation();
   }, [toast]);
 
   React.useEffect(() => {
@@ -163,6 +191,14 @@ export default function StudentDashboardPage() {
             })
             return;
         }
+        if(!location) {
+             toast({
+                title: "Lokasi tidak siap",
+                description: "Pastikan Anda telah memberikan izin lokasi dan lokasi berfungsi.",
+                variant: "destructive"
+            })
+            return;
+        }
         const canvas = document.createElement('canvas');
         canvas.width = videoRef.current.videoWidth;
         canvas.height = videoRef.current.videoHeight;
@@ -183,6 +219,7 @@ export default function StudentDashboardPage() {
             status: status,
             reason: status === 'excused' ? reason : undefined,
             photoDataUri: photoDataUri,
+            location: location ? `${location.latitude}, ${location.longitude}` : undefined,
         });
         
         const fetchedAttendance = await attendanceFlow.getStudentAttendanceForDate(student.id, todayString);
@@ -264,12 +301,21 @@ export default function StudentDashboardPage() {
                                 </AlertDescription>
                             </Alert>
                         )}
+                         {locationError && (
+                            <Alert variant="destructive" className="mt-4">
+                                <MapPin className="h-4 w-4" />
+                                <AlertTitle>Lokasi Tidak Dapat Diakses</AlertTitle>
+                                <AlertDescription>
+                                    {locationError}
+                                </AlertDescription>
+                            </Alert>
+                        )}
                     </div>
 
                     <div className="space-y-4">
                       {!showReasonInput ? (
                           <div className="flex flex-col gap-4">
-                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || hasCameraPermission !== true}>
+                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || hasCameraPermission !== true || !location}>
                                   {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin"/> : <Video className="h-6 w-6"/>}
                                   Hadir (Dengan Kamera)
                               </Button>
@@ -334,6 +380,7 @@ export default function StudentDashboardPage() {
                             <TableHead>Tanggal</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Alasan</TableHead>
+                            <TableHead>Lokasi</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -342,10 +389,11 @@ export default function StudentDashboardPage() {
                                 <TableCell>{format(new Date(att.date), "dd MMM yyyy")}</TableCell>
                                 <TableCell>{getStatusBadge(att.status)}</TableCell>
                                 <TableCell>{att.reason || '-'}</TableCell>
+                                <TableCell>{att.location || '-'}</TableCell>
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
+                                <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
                                     Tidak ada data untuk periode ini.
                                 </TableCell>
                             </TableRow>
