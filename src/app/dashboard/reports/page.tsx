@@ -9,8 +9,7 @@ import type { SheetAttendance, AttendanceStatus } from "@/lib/definitions"
 import { getAllAttendance } from "@/ai/flows/dashboard-flow"
 import { Download, Printer, Loader2, Calendar as CalendarIcon, CheckCircle2, XCircle, Clock, Info } from "lucide-react"
 import { DateRange } from "react-day-picker"
-import { format, subDays, formatISO, parseISO } from "date-fns"
-import { id } from "date-fns/locale"
+import { format, subDays, parseISO } from "date-fns"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -76,21 +75,15 @@ export default function ReportsPage() {
       })
   }, [allAttendance, statusFilter, dateRange])
 
-  const formatRecordTimestamp = (record: SheetAttendance): string => {
-    const timestamp = Number(record.id.replace('ATT',''));
-    if (isNaN(timestamp)) {
-      return format(parseISO(record.date), "dd/MM/yyyy");
-    }
-    return format(new Date(timestamp), "dd/MM/yyyy HH:mm:ss");
-  }
 
   const exportToCSV = () => {
-    const headers = ["ID", "Nama Siswa", "Tanggal & Waktu", "Status", "Lokasi", "Alasan"];
+    const headers = ["ID Siswa", "Nama Siswa", "Tanggal", "Waktu", "Status", "Lokasi", "Alasan"];
     const rows = filteredData.map(d => 
         [
             d.studentId, 
             d.studentName, 
-            `"${formatRecordTimestamp(d)}"`,
+            d.date,
+            d.time || '-',
             d.status, 
             `"${d.location || '-'}"`,
             `"${d.reason || '-'}"`
@@ -202,7 +195,8 @@ export default function ReportsPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Siswa</TableHead>
-                            <TableHead>Waktu Absen</TableHead>
+                            <TableHead>Tanggal</TableHead>
+                            <TableHead>Waktu</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Lokasi</TableHead>
                         </TableRow>
@@ -211,13 +205,14 @@ export default function ReportsPage() {
                         {filteredData.length > 0 ? filteredData.map((record) => (
                             <TableRow key={record.id}>
                                 <TableCell className="font-medium">{record.studentName}</TableCell>
-                                <TableCell>{formatRecordTimestamp(record)}</TableCell>
+                                <TableCell>{format(parseISO(record.date), "dd MMM yyyy")}</TableCell>
+                                <TableCell>{record.time || '-'}</TableCell>
                                 <TableCell>{getStatusBadge(record.status)}</TableCell>
                                 <TableCell className="font-mono text-xs">{record.location || '-'}</TableCell>
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center h-24">
+                                <TableCell colSpan={5} className="text-center h-24">
                                     Tidak ada data yang cocok dengan filter yang dipilih.
                                 </TableCell>
                             </TableRow>

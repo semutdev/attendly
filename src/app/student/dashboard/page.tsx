@@ -173,12 +173,14 @@ export default function StudentDashboardPage() {
     }
 
     setIsSubmitting(true);
+    const now = new Date();
     try {
         await attendanceFlow.markStudentAttendance({
             studentId: student.id,
             studentName: student.name,
             classId: student.classId,
-            date: todayString,
+            date: format(now, "yyyy-MM-dd"),
+            time: format(now, "HH:mm:ss"),
             status: status,
             reason: status === 'excused' ? reason : undefined,
             location: location ? `${location.latitude}, ${location.longitude}` : undefined,
@@ -188,7 +190,7 @@ export default function StudentDashboardPage() {
         const todayRecord = fetchedAttendance.find(att => att.date === todayString) || null;
         setTodaysAttendance(todayRecord);
         if(todayRecord) {
-            setAllAttendance(prev => [todayRecord, ...prev.filter(a => a.date !== todayString)]);
+            setAllAttendance(prev => [todayRecord, ...prev.filter(a => a.id !== todayRecord.id)]);
         }
         setShowReasonInput(false);
 
@@ -324,6 +326,7 @@ export default function StudentDashboardPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Tanggal</TableHead>
+                            <TableHead>Waktu</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Alasan</TableHead>
                             <TableHead>Lokasi</TableHead>
@@ -333,13 +336,14 @@ export default function StudentDashboardPage() {
                         {filteredHistory.length > 0 ? filteredHistory.map(att => (
                             <TableRow key={att.id}>
                                 <TableCell>{format(new Date(att.date), "dd MMM yyyy")}</TableCell>
+                                <TableCell>{att.time || '-'}</TableCell>
                                 <TableCell>{getStatusBadge(att.status)}</TableCell>
                                 <TableCell>{att.reason || '-'}</TableCell>
                                 <TableCell>{att.location || '-'}</TableCell>
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                                <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                                     Tidak ada data untuk periode ini.
                                 </TableCell>
                             </TableRow>

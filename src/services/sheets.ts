@@ -25,7 +25,7 @@ const SUBJECTS_DATA_RANGE = `${SUBJECTS_SHEET_NAME}!A2:B`;
 const SUBJECTS_FULL_RANGE = `${SUBJECTS_SHEET_NAME}!A:B`;
 const STUDENTS_DATA_RANGE = `${STUDENTS_SHEET_NAME}!A2:E`;
 const STUDENTS_FULL_RANGE = `${STUDENTS_SHEET_NAME}!A:E`;
-const ATTENDANCE_DATA_RANGE = `${ATTENDANCE_SHEET_NAME}!A2:J`;
+const ATTENDANCE_DATA_RANGE = `${ATTENDANCE_SHEET_NAME}!A2:K`;
 
 
 function getAuth() {
@@ -327,6 +327,7 @@ export async function markStudentAttendance(attendanceData: StudentAttendanceInp
             values: [[
                 newId,
                 attendanceData.date,
+                attendanceData.time,
                 attendanceData.classId,
                 attendanceData.subjectId || '', // Optional
                 attendanceData.studentId,
@@ -343,14 +344,15 @@ export async function markStudentAttendance(attendanceData: StudentAttendanceInp
 const mapRowToAttendance = (row: any[]): SheetAttendance => ({
     id: row[0],
     date: row[1],
-    classId: row[2],
-    subjectId: row[3] || undefined,
-    studentId: row[4],
-    studentName: row[5],
-    status: row[6] as AttendanceStatus,
-    reason: row[7] || undefined,
-    photoDataUri: row[8] || undefined,
-    location: row[9] || undefined,
+    time: row[2] || undefined,
+    classId: row[3],
+    subjectId: row[4] || undefined,
+    studentId: row[5],
+    studentName: row[6],
+    status: row[7] as AttendanceStatus,
+    reason: row[8] || undefined,
+    photoDataUri: row[9] || undefined,
+    location: row[10] || undefined,
 });
 
 export async function getAllAttendance(): Promise<SheetAttendance[]> {
@@ -365,7 +367,11 @@ export async function getAllAttendance(): Promise<SheetAttendance[]> {
         return rows
             .map(mapRowToAttendance)
             .filter(att => att.id && att.studentId)
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            .sort((a, b) => {
+                const dateA = new Date(`${a.date}T${a.time || '00:00:00'}`).getTime();
+                const dateB = new Date(`${b.date}T${b.time || '00:00:00'}`).getTime();
+                return dateB - dateA;
+            });
     }
     return [];
 }
