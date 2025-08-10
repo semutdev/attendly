@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -9,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog"
 import {
@@ -28,66 +28,72 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { PlusCircle, MoreHorizontal, Pencil, Trash2, Loader2, Users } from "lucide-react"
+import { PlusCircle, MoreHorizontal, Pencil, Trash2, Loader2, ArrowLeft } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { addClass, deleteClass, getClasses, updateClass } from "@/ai/flows/sheet-flow"
-import type { SheetClass } from "@/lib/definitions"
-import Link from "next/link"
+import { addStudent, deleteStudent, getStudentsByClass, updateStudent, getClassDetails } from "@/ai/flows/student-flow"
+import type { SheetStudent, SheetClass } from "@/lib/definitions"
 
-export default function ClassesPage() {
+export default function StudentsPage({ params }: { params: { classId: string } }) {
+  const { classId } = params
   const { toast } = useToast()
-  const [classes, setClasses] = React.useState<SheetClass[]>([])
+  
+  const [students, setStudents] = React.useState<SheetStudent[]>([])
+  const [classDetails, setClassDetails] = React.useState<SheetClass | null>(null)
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
-  const [currentClass, setCurrentClass] = React.useState<SheetClass | null>(null)
-  const [className, setClassName] = React.useState("")
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [currentStudent, setCurrentStudent] = React.useState<SheetStudent | null>(null)
+  const [studentName, setStudentName] = React.useState("")
+  const [isLoading, setIsLoading] = React.useState(true)
 
-  const fetchClasses = React.useCallback(async () => {
+  const fetchStudentsAndClass = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const fetchedClasses = await getClasses();
-      setClasses(fetchedClasses);
+      const [fetchedStudents, fetchedClass] = await Promise.all([
+        getStudentsByClass(classId),
+        getClassDetails(classId)
+      ]);
+      setStudents(fetchedStudents);
+      setClassDetails(fetchedClass);
     } catch (error) {
       console.error(error);
       toast({
         title: "Gagal memuat data",
-        description: "Tidak dapat mengambil data kelas dari Google Sheet.",
+        description: "Tidak dapat mengambil data siswa dari Google Sheet.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [classId, toast]);
 
   React.useEffect(() => {
-    fetchClasses();
-  }, [fetchClasses]);
+    fetchStudentsAndClass();
+  }, [fetchStudentsAndClass]);
 
-  const openDialog = (cls: SheetClass | null = null) => {
-    setCurrentClass(cls)
-    setClassName(cls ? cls.name : "")
+  const openDialog = (student: SheetStudent | null = null) => {
+    setCurrentStudent(student)
+    setStudentName(student ? student.name : "")
     setIsDialogOpen(true)
   }
 
   const closeDialog = () => {
     setIsDialogOpen(false)
-    setCurrentClass(null)
-    setClassName("")
+    setCurrentStudent(null)
+    setStudentName("")
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!className) return
+    if (!studentName) return
 
     try {
-      if (currentClass) {
-        await updateClass({ id: currentClass.id, name: className });
-        toast({ title: "Sukses!", description: "Nama kelas berhasil diperbarui." })
+      if (currentStudent) {
+        await updateStudent({ id: currentStudent.id, name: studentName });
+        toast({ title: "Sukses!", description: "Nama siswa berhasil diperbarui." })
       } else {
-        await addClass({ name: className });
-        toast({ title: "Sukses!", description: "Kelas baru berhasil ditambahkan." })
+        await addStudent({ name: studentName, classId: classId });
+        toast({ title: "Sukses!", description: "Siswa baru berhasil ditambahkan." })
       }
-      fetchClasses();
+      fetchStudentsAndClass();
       closeDialog();
     } catch (error) {
        console.error(error);
@@ -99,11 +105,11 @@ export default function ClassesPage() {
     }
   }
 
-  const handleDelete = async (classId: string) => {
+  const handleDelete = async (studentId: string) => {
     try {
-      await deleteClass(classId);
-      toast({ title: "Sukses!", description: "Kelas berhasil dihapus." });
-      fetchClasses();
+      await deleteStudent(studentId);
+      toast({ title: "Sukses!", description: "Siswa berhasil dihapus." });
+      fetchStudentsAndClass();
     } catch (error) {
       console.error(error);
       toast({
@@ -118,18 +124,28 @@ export default function ClassesPage() {
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Manajemen Kelas</h1>
-          <p className="text-muted-foreground">Tambah, ubah, atau hapus data kelas dari Google Sheet.</p>
+            <Button asChild variant="ghost" size="sm" className="mb-2">
+                <Link href="/dashboard/classes">
+                    <ArrowLeft className="mr-2 h-4 w-4"/>
+                    Kembali ke Daftar Kelas
+                </Link>
+            </Button>
+          <h1 className="text-3xl font-bold font-headline">
+            Manajemen Siswa: {isLoading ? '...' : classDetails?.name}
+          </h1>
+          <p className="text-muted-foreground">Tambah, ubah, atau hapus data siswa untuk kelas ini.</p>
         </div>
         <Button onClick={() => openDialog()}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Tambah Kelas
+          <PlusCircle className="mr-2 h-4 w-4" /> Tambah Siswa
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Daftar Kelas</CardTitle>
-          <CardDescription>Berikut adalah daftar semua kelas yang datanya diambil dari Google Sheet.</CardDescription>
+          <CardTitle>Daftar Siswa</CardTitle>
+          <CardDescription>
+            Berikut adalah daftar siswa di kelas {classDetails?.name || '...'}.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -140,23 +156,17 @@ export default function ClassesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID Kelas</TableHead>
-                  <TableHead>Nama Kelas</TableHead>
-                  <TableHead>Aksi</TableHead>
+                  <TableHead>ID Siswa</TableHead>
+                  <TableHead>Nama Siswa</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {classes.map((cls) => (
-                  <TableRow key={cls.id}>
-                    <TableCell className="font-mono text-sm">{cls.id}</TableCell>
-                    <TableCell className="font-medium">{cls.name}</TableCell>
-                    <TableCell className="flex gap-2">
-                       <Button asChild variant="outline" size="sm">
-                          <Link href={`/dashboard/classes/${cls.id}`}>
-                              <Users className="mr-2 h-4 w-4" />
-                              Kelola Siswa
-                          </Link>
-                       </Button>
+                {students.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-mono text-sm">{student.id}</TableCell>
+                    <TableCell className="font-medium">{student.name}</TableCell>
+                    <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -165,7 +175,7 @@ export default function ClassesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openDialog(cls)}>
+                          <DropdownMenuItem onClick={() => openDialog(student)}>
                             <Pencil className="mr-2 h-4 w-4" />
                             <span>Ubah</span>
                           </DropdownMenuItem>
@@ -180,12 +190,12 @@ export default function ClassesPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Apakah Anda yakin?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tindakan ini tidak dapat diurungkan. Ini akan menghapus kelas secara permanen dari Google Sheet.
+                                  Tindakan ini tidak dapat diurungkan. Ini akan menghapus siswa secara permanen dari kelas ini.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Batal</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(cls.id)}>Hapus</AlertDialogAction>
+                                <AlertDialogAction onClick={() => handleDelete(student.id)}>Hapus</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
@@ -204,9 +214,9 @@ export default function ClassesPage() {
         <DialogContent className="sm:max-w-[425px]" onEscapeKeyDown={closeDialog}>
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle>{currentClass ? "Ubah Kelas" : "Tambah Kelas Baru"}</DialogTitle>
+              <DialogTitle>{currentStudent ? "Ubah Siswa" : "Tambah Siswa Baru"}</DialogTitle>
               <DialogDescription>
-                {currentClass ? "Ubah nama kelas di bawah ini." : "Masukkan nama untuk kelas baru."}
+                {currentStudent ? "Ubah nama siswa di bawah ini." : "Masukkan nama untuk siswa baru."}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -216,10 +226,10 @@ export default function ClassesPage() {
                 </Label>
                 <Input
                   id="name"
-                  value={className}
-                  onChange={(e) => setClassName(e.target.value)}
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
                   className="col-span-3"
-                  placeholder="Contoh: Kelas 10-C"
+                  placeholder="Contoh: Budi Santoso"
                   required
                 />
               </div>

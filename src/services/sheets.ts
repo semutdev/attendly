@@ -2,7 +2,7 @@
  * @fileoverview Service for interacting with the Google Sheets API.
  */
 import { google } from 'googleapis';
-import type { AddClassInput, SheetClass, AddSubjectInput, SheetSubject } from '@/lib/definitions';
+import type { AddClassInput, SheetClass, AddSubjectInput, SheetSubject, SheetStudent, AddStudentInput, UpdateStudentInput } from '@/lib/definitions';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -13,12 +13,17 @@ const SPREADSHEET_ID = "1uAj6drt6llPnE5ql-xKA-wi8ZAiStSMjTsuEI6dFiSM";
 // Sheet Names
 const CLASSES_SHEET_NAME = 'Classes';
 const SUBJECTS_SHEET_NAME = 'Subjects';
+const STUDENTS_SHEET_NAME = 'Students';
+
 
 // Data Ranges
 const CLASSES_DATA_RANGE = `${CLASSES_SHEET_NAME}!A2:B`;
 const CLASSES_FULL_RANGE = `${CLASSES_SHEET_NAME}!A:B`;
 const SUBJECTS_DATA_RANGE = `${SUBJECTS_SHEET_NAME}!A2:B`;
 const SUBJECTS_FULL_RANGE = `${SUBJECTS_SHEET_NAME}!A:B`;
+const STUDENTS_DATA_RANGE = `${STUDENTS_SHEET_NAME}!A2:C`;
+const STUDENTS_FULL_RANGE = `${STUDENTS_SHEET_NAME}!A:C`;
+
 
 function getAuth() {
   if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
@@ -41,6 +46,11 @@ async function getSheetsApi() {
 }
 
 // ========== Class Functions ==========
+
+export async function getClass(id: string): Promise<SheetClass | null> {
+  const classes = await getClasses();
+  return classes.find(c => c.id === id) || null;
+}
 
 export async function getClasses(): Promise<SheetClass[]> {
   const sheets = await getSheetsApi();
@@ -206,4 +216,90 @@ export async function deleteSubject(id: string): Promise<void> {
         spreadsheetId: SPREADSHEET_ID,
         range: `${SUBJECTS_SHEET_NAME}!A${sheetRowNumber}:B${sheetRowNumber}`,
     });
+}
+
+// ========== Student Functions ==========
+
+export async function getStudentsByClass(classId: string): Promise<SheetStudent[]> {
+  const sheets = await getSheetsApi();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: STUDENTS_DATA_RANGE,
+  });
+
+  const rows = response.data.values;
+  if (rows && rows.length) {
+    const allStudents = rows.map((row) => ({
+      id: row[0],
+      name: row[1],
+      classId: row[2],
+    })).filter(s => s.id && s.name && s.classId);
+    return allStudents.filter(s => s.classId === classId);
+  }
+  return [];
+}
+
+export async function addStudent(studentData: AddStudentInput): Promise<void> {
+  const sheets = await getSheetsApi();
+  const newId = `S${Date.now()}`;
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: STUDENTS_DATA_RANGE,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [[newId, studentData.name, studentData.classId]],
+    },
+  });
+}
+
+export async function updateStudent(studentData: UpdateStudentInput): Promise<void> {
+  const sheets = await getSheetsApi();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: STUDENTS_FULL_RANGE,
+  });
+
+  const rows = response.data.values;
+  if (!rows) throw new Error('Student sheet not found or empty.');
+
+  const rowIndex = rows.findIndex(row => row[0] === studentData.id);
+
+  if (rowIndex === -1) {
+    throw new Error(`Student with ID ${studentData.id} not found.`);
+  }
+
+  const sheetRowNumber = rowIndex + 1;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${STUDENTS_SHEET_NAME}!B${sheetRowNumber}`,
+    valueInputOption: 'USER_ENTERED',
+    requestBody: {
+      values: [[studentData.name]],
+    },
+  });
+}
+
+export async function deleteStudent(id: string): Promise<void> {
+  const sheets = await getSheetsApi();
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: STUDENTS_FULL_RANGE,
+  });
+
+  const rows = response.data.values;
+  if (!rows) throw new Error('Student sheet not found or empty.');
+
+  const rowIndex = rows.findIndex(row => row[0] === id);
+
+  if (rowIndex === -1) {
+    throw new Error(`Student with ID ${id} not found.`);
+  }
+
+  const sheetRowNumber = rowIndex + 1;
+
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${STUDENTS_SHEET_NAME}!A${sheetRowNumber}:C${sheetRowNumber}`,
+  });
 }
