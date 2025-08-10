@@ -30,7 +30,8 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { PlusCircle, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { addClass, deleteClass, getClasses, updateClass, SheetClass, AddClassInput } from "@/ai/flows/sheet-flow"
+import { addClass, deleteClass, getClasses, updateClass } from "@/ai/flows/sheet-flow"
+import type { SheetClass } from "@/lib/definitions"
 
 export default function ClassesPage() {
   const { toast } = useToast()

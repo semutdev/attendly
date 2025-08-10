@@ -3,20 +3,8 @@
  * @fileOverview Server-side actions for interacting with Google Sheets to manage class data.
  */
 
-import {z} from 'zod';
 import * as sheetService from '@/services/sheets';
-
-export const SheetClassSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-});
-export type SheetClass = z.infer<typeof SheetClassSchema>;
-
-const AddClassInputSchema = z.object({
-  name: z.string(),
-});
-export type AddClassInput = z.infer<typeof AddClassInputSchema>;
-
+import type { AddClassInput, SheetClass } from '@/lib/definitions';
 
 export async function getClasses(): Promise<SheetClass[]> {
   return await sheetService.getClasses();

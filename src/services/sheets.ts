@@ -2,18 +2,7 @@
  * @fileoverview Service for interacting with the Google Sheets API.
  */
 import { google } from 'googleapis';
-import { z } from 'zod';
-
-const AddClassInputSchema = z.object({
-  name: z.string(),
-});
-type AddClassInput = z.infer<typeof AddClassInputSchema>;
-
-const SheetClassSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-});
-type SheetClass = z.infer<typeof SheetClassSchema>;
+import type { AddClassInput, SheetClass } from '@/lib/definitions';
 
 
 // This is the ID of your Google Sheet.
