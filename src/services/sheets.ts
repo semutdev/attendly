@@ -3,6 +3,9 @@
  */
 import { google } from 'googleapis';
 import type { AddClassInput, SheetClass } from '@/lib/definitions';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 
 // This is the ID of your Google Sheet.
