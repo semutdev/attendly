@@ -148,8 +148,7 @@ export default function StudentDashboardPage() {
 
     getCameraPermission();
     getLocation();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [toast]);
 
   React.useEffect(() => {
     const studentData = sessionStorage.getItem('student')
@@ -180,7 +179,6 @@ export default function StudentDashboardPage() {
       }
     }
     fetchData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, toast, todayString])
 
   React.useEffect(() => {
@@ -311,7 +309,7 @@ export default function StudentDashboardPage() {
             ) : (
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                      <div>
-                        <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                        <div className="relative aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center">
                              <video ref={videoRef} className="hidden" autoPlay />
                              <canvas ref={canvasRef} className="w-full h-full object-cover" />
                              {hasCameraPermission === null && (
