@@ -53,15 +53,16 @@ export default function DashboardLayout({
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href} legacyBehavior passHref>
-                  <SidebarMenuButton
-                    isActive={pathname === item.href}
-                    tooltip={item.label}
-                  >
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                  tooltip={item.label}
+                >
+                  <Link href={item.href}>
                     <item.icon />
                     <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </Link>
+                  </Link>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
@@ -78,12 +79,12 @@ export default function DashboardLayout({
               <span className="text-muted-foreground">teacher@school.com</span>
             </div>
           </div>
-          <Link href="/" legacyBehavior passHref>
-             <SidebarMenuButton tooltip="Keluar">
-                <LogOut />
-                <span>Keluar</span>
-            </SidebarMenuButton>
-          </Link>
+           <SidebarMenuButton asChild tooltip="Keluar">
+            <Link href="/">
+              <LogOut />
+              <span>Keluar</span>
+            </Link>
+          </SidebarMenuButton>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
