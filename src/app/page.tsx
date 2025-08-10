@@ -12,16 +12,16 @@ import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = React.useState('silvina@gmail.com');
-  const [password, setPassword] = React.useState('jauzatii');
+  const [username, setUsername] = React.useState('guru');
+  const [password, setPassword] = React.useState('password');
   const [error, setError] = React.useState('');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === 'silvina@gmail.com' && password === 'jauzatii') {
+    if (username === 'guru' && password === 'password') {
       router.push('/dashboard');
     } else {
-      setError('Email atau password salah.');
+      setError('Username atau password salah.');
     }
   };
 
@@ -39,14 +39,14 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
+                  id="username"
+                  type="text"
+                  placeholder="Masukkan username Anda"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
