@@ -87,8 +87,7 @@ export default function StudentDashboardPage() {
     };
 
     getCameraPermission();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [toast]);
 
   React.useEffect(() => {
     const studentData = sessionStorage.getItem('student')
