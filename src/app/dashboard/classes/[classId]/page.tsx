@@ -80,8 +80,8 @@ export default function StudentsPage({ params }: { params: { classId: string } }
     if (student) {
       setFormState({
         name: student.name,
-        username: student.username || "",
-        password: student.password || "",
+        username: student.username,
+        password: student.password,
       });
     } else {
       setFormState({ name: "", username: "", password: "" });
@@ -271,7 +271,7 @@ export default function StudentsPage({ params }: { params: { classId: string } }
                 </Label>
                 <Input
                   id="password"
-                  type="password"
+                  type="text"
                   value={formState.password}
                   onChange={handleInputChange}
                   className="col-span-3"

@@ -46,3 +46,33 @@ export const UpdateStudentInputSchema = z.object({
     password: z.string(),
 });
 export type UpdateStudentInput = z.infer<typeof UpdateStudentInputSchema>;
+
+export const LoginStudentInputSchema = z.object({
+  username: z.string(),
+  password: z.string(),
+});
+export type LoginStudentInput = z.infer<typeof LoginStudentInputSchema>;
+
+export const AttendanceStatusSchema = z.enum(['present', 'absent', 'late', 'excused']);
+export type AttendanceStatus = z.infer<typeof AttendanceStatusSchema>;
+
+export const SheetAttendanceSchema = z.object({
+    id: z.string(),
+    date: z.string(),
+    classId: z.string(),
+    subjectId: z.string(),
+    studentId: z.string(),
+    studentName: z.string(),
+    status: AttendanceStatusSchema,
+});
+export type SheetAttendance = z.infer<typeof SheetAttendanceSchema>;
+
+export const StudentAttendanceInputSchema = z.object({
+  date: z.string(),
+  classId: z.string(),
+  subjectId: z.string(),
+  studentId: z.string(),
+  studentName: z.string(),
+  status: AttendanceStatusSchema,
+});
+export type StudentAttendanceInput = z.infer<typeof StudentAttendanceInputSchema>;
