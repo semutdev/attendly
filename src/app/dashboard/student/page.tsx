@@ -58,6 +58,16 @@ export default function StudentDashboardPage() {
   
   React.useEffect(() => {
     const getCameraPermission = async () => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('Camera API not supported.');
+        setHasCameraPermission(false);
+        toast({
+            variant: 'destructive',
+            title: 'Kamera Tidak Didukung',
+            description: 'Browser Anda tidak mendukung akses kamera.',
+        });
+        return;
+      }
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         setHasCameraPermission(true);
@@ -96,7 +106,7 @@ export default function StudentDashboardPage() {
           attendanceFlow.getAllAttendanceForStudent(parsedStudent.id)
         ]);
         
-        const todayRecord = todayRecords.find(att => att.date === todayString) || null;
+        const todayRecord = todayRecords.length > 0 ? todayRecords[0] : null;
         setTodaysAttendance(todayRecord);
         setAllAttendance(allRecords);
       } catch (error) {
@@ -145,7 +155,7 @@ export default function StudentDashboardPage() {
     
     let photoDataUri: string | undefined = undefined;
     if(status === 'present') {
-        if(!hasCameraPermission || !videoRef.current) {
+        if(!hasCameraPermission || !videoRef.current || !videoRef.current.srcObject) {
             toast({
                 title: "Kamera tidak siap",
                 description: "Pastikan Anda telah memberikan izin kamera dan kamera berfungsi.",
@@ -234,27 +244,31 @@ export default function StudentDashboardPage() {
                     <p className="text-muted-foreground">Status: <span className="font-bold capitalize">{todaysAttendance.status}</span></p>
                 </div>
             ) : (
-                <div className="grid md:grid-cols-2 gap-8 items-center">
-                    <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
-                       <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted />
-                       {hasCameraPermission === false && (
-                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white p-4">
-                           <VideoOff className="w-12 h-12 mb-2" />
-                           <p className="text-center font-semibold">Kamera tidak dapat diakses.</p>
-                           <p className="text-center text-sm">Mohon izinkan akses kamera di browser Anda.</p>
-                         </div>
-                       )}
-                       {hasCameraPermission === null && (
-                         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white">
-                            <Loader2 className="w-8 h-8 animate-spin" />
-                         </div>
-                       )}
+                <div className="grid md:grid-cols-2 gap-8 items-start">
+                     <div>
+                        <div className="relative aspect-video bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                            <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                            {hasCameraPermission === null && (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white">
+                                    <Loader2 className="w-8 h-8 animate-spin" />
+                                </div>
+                            )}
+                        </div>
+                        {hasCameraPermission === false && (
+                            <Alert variant="destructive" className="mt-4">
+                                <VideoOff className="h-4 w-4" />
+                                <AlertTitle>Kamera Tidak Dapat Diakses</AlertTitle>
+                                <AlertDescription>
+                                    Mohon izinkan akses kamera di browser Anda untuk melanjutkan.
+                                </AlertDescription>
+                            </Alert>
+                        )}
                     </div>
 
                     <div className="space-y-4">
                       {!showReasonInput ? (
                           <div className="flex flex-col gap-4">
-                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || !hasCameraPermission}>
+                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || hasCameraPermission !== true}>
                                   {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin"/> : <Video className="h-6 w-6"/>}
                                   Hadir (Dengan Kamera)
                               </Button>
@@ -275,7 +289,7 @@ export default function StudentDashboardPage() {
                               />
                               <div className="flex gap-2 justify-end">
                                   <Button variant="ghost" onClick={() => setShowReasonInput(false)} disabled={isSubmitting}>Batal</Button>
-                                  <Button onClick={() => handleAttendance('excused')} disabled={isSubmitting}>
+                                  <Button onClick={() => handleAttendance('excused')} disabled={isSubmitting || !reason}>
                                       {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                       Kirim Alasan
                                   </Button>
