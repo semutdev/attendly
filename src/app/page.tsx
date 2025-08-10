@@ -1,9 +1,30 @@
+
+"use client"
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = React.useState('silvina@gmail.com');
+  const [password, setPassword] = React.useState('jauzatii');
+  const [error, setError] = React.useState('');
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email === 'silvina@gmail.com' && password === 'jauzatii') {
+      router.push('/dashboard');
+    } else {
+      setError('Email atau password salah.');
+    }
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-md">
@@ -16,17 +37,33 @@ export default function LoginPage() {
             <CardDescription>Aplikasi absensi modern untuk mempermudah pekerjaan Anda.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center space-y-4">
-              <p className="text-center text-sm text-muted-foreground">
-                Masuk untuk mulai mengelola absensi siswa.
-              </p>
-              <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
-                <Link href="/dashboard">
-                  <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.9l-62.2 62.2C322.7 89.2 289.4 72 248 72 142.1 72 64 150.1 64 256s78.1 184 184 184c88.4 0 137.9-42.3 148.8-69.8H248v-85.3h236.1c2.3 12.7 3.9 26.9 3.9 41.4z"></path></svg>
-                  Masuk dengan Google
-                </Link>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password" 
+                  required 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="lg">
+                Masuk
               </Button>
-            </div>
+            </form>
           </CardContent>
         </Card>
       </div>
