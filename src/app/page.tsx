@@ -37,7 +37,7 @@ export default function LoginPage() {
         if (student) {
           // Store student data in session storage and redirect
           sessionStorage.setItem('student', JSON.stringify(student));
-          router.push('/dashboard/student');
+          router.push('/student/dashboard');
         } else {
           setError('Username atau password Siswa salah.');
         }

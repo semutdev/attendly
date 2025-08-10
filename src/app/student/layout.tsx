@@ -1,4 +1,4 @@
-export default function StudentDashboardLayout({
+export default function StudentLayout({
   children,
 }: {
   children: React.ReactNode;
