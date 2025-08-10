@@ -61,11 +61,8 @@ export default function StudentDashboardPage() {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         console.error('Camera API not supported.');
         setHasCameraPermission(false);
-        toast({
-            variant: 'destructive',
-            title: 'Kamera Tidak Didukung',
-            description: 'Browser Anda tidak mendukung akses kamera.',
-        });
+        // We can't use toast here as it's not a dependency.
+        // A static alert will have to do if the API isn't supported.
         return;
       }
       try {
@@ -78,16 +75,10 @@ export default function StudentDashboardPage() {
       } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Izin Kamera Ditolak',
-          description: 'Absensi memerlukan izin kamera. Silakan aktifkan di pengaturan browser Anda.',
-        });
       }
     };
 
     getCameraPermission();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   React.useEffect(() => {
@@ -261,7 +252,7 @@ export default function StudentDashboardPage() {
                                 <VideoOff className="h-4 w-4" />
                                 <AlertTitle>Kamera Tidak Dapat Diakses</AlertTitle>
                                 <AlertDescription>
-                                    Mohon izinkan akses kamera di browser Anda untuk melanjutkan.
+                                    Mohon izinkan akses kamera di browser Anda untuk melanjutkan. Jika sudah, segarkan halaman.
                                 </AlertDescription>
                             </Alert>
                         )}
