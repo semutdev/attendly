@@ -19,6 +19,7 @@ import {
   FileText,
   LogOut,
   User,
+  School,
 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import { Logo } from "@/components/logo"
@@ -37,6 +38,7 @@ export default function DashboardLayout({
   const navItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { href: "/dashboard/attendance", icon: CheckSquare, label: "Absensi" },
+    { href: "/dashboard/classes", icon: School, label: "Kelas" },
     { href: "/dashboard/reports", icon: FileText, label: "Laporan" },
   ]
 
