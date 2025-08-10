@@ -35,8 +35,7 @@ import type { SheetStudent, SheetClass } from "@/lib/definitions"
 
 type StudentFormState = Omit<SheetStudent, 'id' | 'classId'>
 
-export default function StudentsPage({ params }: { params: { classId: string } }) {
-  const { classId } = params;
+function StudentsPageContent({ classId }: { classId: string }) {
   const { toast } = useToast()
   
   const [students, setStudents] = React.useState<SheetStudent[]>([])
@@ -290,4 +289,8 @@ export default function StudentsPage({ params }: { params: { classId: string } }
       </Dialog>
     </div>
   )
+}
+
+export default function StudentsPage({ params }: { params: { classId: string } }) {
+  return <StudentsPageContent classId={params.classId} />;
 }
