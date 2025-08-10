@@ -35,7 +35,8 @@ import type { SheetStudent, SheetClass } from "@/lib/definitions"
 
 type StudentFormState = Omit<SheetStudent, 'id' | 'classId'>
 
-export default function StudentsPage({ params: { classId } }: { params: { classId: string } }) {
+export default function StudentsPage({ params }: { params: { classId: string } }) {
+  const { classId } = params;
   const { toast } = useToast()
   
   const [students, setStudents] = React.useState<SheetStudent[]>([])
