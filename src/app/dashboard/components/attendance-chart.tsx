@@ -4,7 +4,7 @@ import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recha
 import { format, subDays } from "date-fns"
 import { id } from 'date-fns/locale'
 import { Card } from "@/components/ui/card"
-import type { AttendanceRecord } from "@/lib/data"
+import type { SheetAttendance } from "@/lib/definitions"
 
 interface ChartData {
   name: string;
@@ -12,7 +12,7 @@ interface ChartData {
   absent: number;
 }
 
-export function AttendanceChart({ data }: { data: AttendanceRecord[] }) {
+export function AttendanceChart({ data }: { data: SheetAttendance[] }) {
   const chartData: ChartData[] = Array.from({ length: 7 }).map((_, i) => {
     const date = subDays(new Date(), i);
     const dateString = format(date, "yyyy-MM-dd");
@@ -53,7 +53,7 @@ export function AttendanceChart({ data }: { data: AttendanceRecord[] }) {
             cursor={{ fill: "hsl(var(--accent) / 0.1)" }}
             />
             <Bar dataKey="present" fill="hsl(var(--primary))" name="Hadir" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="absent" fill="hsl(var(--accent))" name="Absen" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="absent" fill="hsl(var(--destructive))" name="Absen" radius={[4, 4, 0, 0]} />
         </BarChart>
         </ResponsiveContainer>
     </div>

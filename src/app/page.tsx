@@ -10,10 +10,11 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { loginStudent } from '@/ai/flows/student-flow';
+import { Heart } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [loginType, setLoginType] = React.useState('guru');
+  const [loginType, setLoginType] = React.useState('siswa');
   const [username, setUsername] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState('');
@@ -25,7 +26,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     if (loginType === 'guru') {
-      if (username === 'guru' && password === 'password') {
+      if (username === 'silvi' && password === 'jauzatii') {
         router.push('/dashboard');
       } else {
         setError('Username atau password Guru salah.');
@@ -49,16 +50,10 @@ export default function LoginPage() {
       }
     }
   };
-  
+
   React.useEffect(() => {
-    // Pre-fill teacher credentials for demo purposes
-    if (loginType === 'guru') {
-      setUsername('guru');
-      setPassword('password');
-    } else {
-      setUsername('');
-      setPassword('');
-    }
+    setUsername('');
+    setPassword('');
   }, [loginType]);
 
   return (
@@ -76,7 +71,7 @@ export default function LoginPage() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-3">
                 <Label>Masuk sebagai</Label>
-                <RadioGroup defaultValue="guru" onValueChange={setLoginType} className="grid grid-cols-2 gap-4">
+                <RadioGroup defaultValue="siswa" onValueChange={setLoginType} className="grid grid-cols-2 gap-4">
                   <div>
                     <RadioGroupItem value="guru" id="guru" className="peer sr-only" />
                     <Label htmlFor="guru" className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
@@ -125,7 +120,9 @@ export default function LoginPage() {
         </Card>
       </div>
        <footer className="mt-8 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Attendly. All rights reserved.
+         <div className="flex items-center justify-center gap-1.5">
+           Built with <Heart className="h-4 w-4 text-red-500 fill-current" /> for Bu Silvi.
+         </div>
       </footer>
     </main>
   );

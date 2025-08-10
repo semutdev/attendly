@@ -34,7 +34,7 @@ function getAuth() {
   return new google.auth.GoogleAuth({
     credentials: {
       client_email: "absen-kelas@schoolbell-attendance.iam.gserviceaccount.com",
-      private_key: "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDZ10v9pKzcv550\nxlPxRD4Xnvt4LNxGamIMtXWODK/TQ2viKu2El8MwHSembDl4JN4QmKMYtKGT+g1J\nzxn0k6gSVI7Y9LHL6wyzL2DT/QzSLMorK9W2dksP3oDbLT/0EfWjy3i+ar9+6Az0\nqoXvSbygpHnGvPk3DOfsGOufyGaY0Sr6AeAEbWtjxeHNPkPa9EmPRv745eKQYyAy\nh/rUNJTe/ngU9PJpo8O8Nshrk5mmPXWbNYDbPCDvjt8JQoPWWD1hmvOfo1AtU3lg\nykKMfWoqzhoTjdsr2xflhJfvcvt8XYv15DCr6SRoez1OJzkBkQMU33Ky67uUYRo0\nXGAcwMIZAgMBAAECggEAP/RJ3osApwRouF7bmRsQYa3upQ8Ckne8FoAVpaEK46rJ\nGwrAVauahd8hW2Ytjxy/xz6Qr3mkcEW6rf8r3xaUguEpWP+pzTTSMy8HLeV+ZJv6\ntKb3ZMyg5+VKjk5gFr9JDw/3AGxlkRP+bbw8ew56Xu06xUKIpgVXd4SvdGcI2/cN\n5OU+HVVTsL2mfGtZ0HvKanaa3DFZ6ItfgKN6jCgA9uIb2zmR3imL2iuKSig2yOZI\nT2xBfIJI8hoK7ERgJ01BOSX36nWaPIfJsP0F+Vql1KpTM2eCwtaSS/F1YdTLgNlv\n9nYB2+4f+MDD7Oy4TbSBkhIyaqZ3Uvifl2PU1We6MwKBgQD3zzrY113z9IezshIN\nKZaBR/oAimuDp3umDwm53sqXMzq5kkchtPmXb2v5Y1J1vhmpv3AKmfMzQMXnXVif\nCtU2r/eDqF5WdjUky3tNKARvdQ5OlTSSWqDiRumDq4OyO46Ll+iKtpPWlxPGjKAW\nVI0KHqRq0tNQ1hQxs/EfHxVBywKBgQDhCn8++HxFIhFbuOpc3iuhJPPzYlxaS1OA\nf5eteYBa/uAAWpI7cbNR+kSKBZfl5WXml7oxjnBCaYZNFKD39yrpY+0sn0t1i7CU\nNkXPyx1MA6f3iZ9GTEbXTF6CXoeS46VaDy0iCZWEOY+wo1Ri2SAAxxRurjjebUWk\niBBZbEF/KwKBgQDIOv+Xml1l8x17CtUfIY1kpJ3StgWteTSlttzq/KPBjDlVHGax\nS6OowvUBq0lDrfjaeb60MjSaIypFid1DlOM2rvRVw0OGpTjHpEraywzaakDHKjQy\nVVxNuXKRW5Kr/wdsr6/L9T57U9M8yP/JS0Qy+xNq5TKtzGzAxF5+AQWSBQKBgQCp\nr0iTKrpJRo7gImZU8BDlyP9JHXmVfAbSdWLhIyRteJFesuxgdjNINPVJPT5z0q0r\nWmzCwSxUZ00lAdD+KBjrMrW7V8GGOHZEy0eIjxbgIkGcnODEGO+xl5wLoUuIrq4X\nYiod6CwdL2nxPrZ6ck13SKVXb3biAHLqxM3PH5mjUQKBgQCWEhA2Ot3fDQMEUPIw\nrCt3BsXKCCQrWPONOve2MPA24Ovm81th5XB0FkD/FqhAYjlPqYL5bGflHGTCt9rY\n1dTIP/hcz5qj1oRggyHNSOHzRh+24L3tUGqAS+vpxjuEnfG16bzfIkHpYHQrSthE\nDU7IrwMWklWOhW2A38vc/MC8Zg==\n-----END PRIVATE KEY-----\n".replace(/\\n/g, '\n'),
+      private_key: "-----BEGIN PRIVATE KEY-----\\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDZ10v9pKzcv550\\nxlPxRD4Xnvt4LNxGamIMtXWODK/TQ2viKu2El8MwHSembDl4JN4QmKMYtKGT+g1J\\nzxn0k6gSVI7Y9LHL6wyzL2DT/QzSLMorK9W2dksP3oDbLT/0EfWjy3i+ar9+6Az0\\nqoXvSbygpHnGvPk3DOfsGOufyGaY0Sr6AeAEbWtjxeHNPkPa9EmPRv745eKQYyAy\\nh/rUNJTe/ngU9PJpo8O8Nshrk5mmPXWbNYDbPCDvjt8JQoPWWD1hmvOfo1AtU3lg\\nykKMfWoqzhoTjdsr2xflhJfvcvt8XYv15DCr6SRoez1OJzkBkQMU33Ky67uUYRo0\\nXGAcwMIZAgMBAAECggEAP/RJ3osApwRouF7bmRsQYa3upQ8Ckne8FoAVpaEK46rJ\\nGwrAVauahd8hW2Ytjxy/xz6Qr3mkcEW6rf8r3xaUguEpWP+pzTTSMy8HLeV+ZJv6\\ntKb3ZMyg5+VKjk5gFr9JDw/3AGxlkRP+bbw8ew56Xu06xUKIpgVXd4SvdGcI2/cN\\n5OU+HVVTsL2mfGtZ0HvKanaa3DFZ6ItfgKN6jCgA9uIb2zmR3imL2iuKSig2yOZI\\nT2xBfIJI8hoK7ERgJ01BOSX36nWaPIfJsP0F+Vql1KpTM2eCwtaSS/F1YdTLgNlv\\n9nYB2+4f+MDD7Oy4TbSBkhIyaqZ3Uvifl2PU1We6MwKBgQD3zzrY113z9IezshIN\\nKZaBR/oAimuDp3umDwm53sqXMzq5kkchtPmXb2v5Y1J1vhmpv3AKmfMzQMXnXVif\\nCtU2r/eDqF5WdjUky3tNKARvdQ5OlTSSWqDiRumDq4OyO46Ll+iKtpPWlxPGjKAW\\nVI0KHqRq0tNQ1hQxs/EfHxVBywKBgQDhCn8++HxFIhFbuOpc3iuhJPPzYlxaS1OA\\nf5eteYBa/uAAWpI7cbNR+kSKBZfl5WXml7oxjnBCaYZNFKD39yrpY+0sn0t1i7CU\\nNkXPyx1MA6f3iZ9GTEbXTF6CXoeS46VaDy0iCZWEOY+wo1Ri2SAAxxRurjjebUWk\\niBBZbEF/KwKBgQDIOv+Xml1l8x17CtUfIY1kpJ3StgWteTSlttzq/KPBjDlVHGax\\nS6OowvUBq0lDrfjaeb60MjSaIypFid1DlOM2rvRVw0OGpTjHpEraywzaakDHKjQy\\nVVxNuXKRW5Kr/wdsr6/L9T57U9M8yP/JS0Qy+xNq5TKtzGzAxF5+AQWSBQKBgQCp\\nr0iTKrpJRo7gImZU8BDlyP9JHXmVfAbSdWLhIyRteJFesuxgdjNINPVJPT5z0q0r\\nWmzCwSxUZ00lAdD+KBjrMrW7V8GGOHZEy0eIjxbgIkGcnODEGO+xl5wLoUuIrq4X\\nYiod6CwdL2nxPrZ6ck13SKVXb3biAHLqxM3PH5mjUQKBgQCWEhA2Ot3fDQMEUPIw\\nrCt3BsXKCCQrWPONOve2MPA24Ovm81th5XB0FkD/FqhAYjlPqYL5bGflHGTCt9rY\\n1dTIP/hcz5qj1oRggyHNSOHzRh+24L3tUGqAS+vpxjuEnfG16bzfIkHpYHQrSthE\\nDU7IrwMWklWOhW2A38vc/MC8Zg==\\n-----END PRIVATE KEY-----\\n".replace(/\\n/g, '\n'),
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
@@ -278,10 +278,9 @@ export async function updateStudent(studentData: UpdateStudentInput): Promise<vo
 
   const sheetRowNumber = rowIndex + 1;
 
-  // Note: We are updating from column B (name) to E (password). classId is not updated here.
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
-    range: `${STUDENTS_SHEET_NAME}!B${sheetRowNumber}:E${sheetRowNumber}`,
+    range: `${STUDENTS_SHEET_NAME}!B${sheetRowNumber}:D${sheetRowNumber}`,
     valueInputOption: 'USER_ENTERED',
     requestBody: {
       values: [[studentData.name, studentData.username, studentData.password]],
@@ -344,16 +343,16 @@ const mapRowToAttendance = (row: any[]): SheetAttendance => ({
     id: row[0],
     date: row[1],
     classId: row[2],
-    subjectId: row[3],
+    subjectId: row[3] || undefined,
     studentId: row[4],
     studentName: row[5],
     status: row[6] as AttendanceStatus,
-    reason: row[7],
-    photoDataUri: row[8],
-    location: row[9],
+    reason: row[7] || undefined,
+    photoDataUri: row[8] || undefined,
+    location: row[9] || undefined,
 });
 
-export async function getAllAttendanceForStudent(studentId: string): Promise<SheetAttendance[]> {
+export async function getAllAttendance(): Promise<SheetAttendance[]> {
     const sheets = await getSheetsApi();
     const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
@@ -364,10 +363,16 @@ export async function getAllAttendanceForStudent(studentId: string): Promise<She
     if (rows && rows.length) {
         return rows
             .map(mapRowToAttendance)
-            .filter(att => att.id && att.studentId === studentId)
+            .filter(att => att.id && att.studentId)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     }
     return [];
+}
+
+
+export async function getAllAttendanceForStudent(studentId: string): Promise<SheetAttendance[]> {
+    const allAttendance = await getAllAttendance();
+    return allAttendance.filter(att => att.studentId === studentId);
 }
 
 

@@ -11,13 +11,26 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import * as attendanceFlow from "@/ai/flows/attendance-flow"
 import type { SheetStudent, SheetAttendance, AttendanceStatus } from "@/lib/definitions"
-import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info, Video, VideoOff, MapPin } from "lucide-react"
+import { LogOut, Loader2, CheckCircle, XCircle, Calendar, Clock, Info, Video, VideoOff, MapPin, Sparkles } from "lucide-react"
 import { format, startOfWeek, startOfMonth, isWithinInterval } from "date-fns"
 import { id } from "date-fns/locale"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
 type HistoryFilter = "today" | "week" | "month"
+
+const motivationalQuotes = [
+    "Kehadiranmu hari ini adalah langkah pertama menuju sukses.",
+    "Setiap ilmu yang kamu serap hari ini, membangun masa depanmu.",
+    "Jangan takut salah, karena dari situlah kita belajar.",
+    "Buka pikiranmu, siap untuk petualangan belajar hari ini!",
+    "Fokus pada tujuan, satu langkah setiap harinya.",
+    "Semangatmu hari ini menentukan cerahnya esok hari.",
+    "Percaya pada dirimu, kamu lebih hebat dari yang kamu duga.",
+    "Jadikan hari ini lebih baik dari hari kemarin.",
+    "Setiap usaha kecil yang kamu lakukan sangat berarti.",
+    "Mulai dengan senyuman, taklukkan harimu!",
+];
 
 const getStatusBadge = (status: AttendanceStatus) => {
   const variants: Record<AttendanceStatus, { variant: "default" | "secondary" | "destructive" | "outline", icon: React.ReactNode, text: string, className: string }> = {
@@ -47,11 +60,13 @@ export default function StudentDashboardPage() {
   const [hasCameraPermission, setHasCameraPermission] = React.useState<boolean | null>(null);
   const [location, setLocation] = React.useState<{ latitude: number; longitude: number } | null>(null)
   const [locationError, setLocationError] = React.useState<string | null>(null)
-  const videoRef = React.useRef<HTMLVideoElement>(null)
+  const [motivationalQuote, setMotivationalQuote] = React.useState("");
 
+  const videoRef = React.useRef<HTMLVideoElement>(null)
   const todayString = format(new Date(), "yyyy-MM-dd");
 
   React.useEffect(() => {
+    setMotivationalQuote(motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]);
     const timer = setInterval(() => {
       setCurrentTime(new Date())
     }, 1000)
@@ -313,6 +328,13 @@ export default function StudentDashboardPage() {
                     </div>
 
                     <div className="space-y-4">
+                      <Alert className="border-primary/50 bg-primary/5">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <AlertTitle className="text-primary font-semibold">Motivasi Hari Ini</AlertTitle>
+                        <AlertDescription>
+                           {motivationalQuote}
+                        </AlertDescription>
+                      </Alert>
                       {!showReasonInput ? (
                           <div className="flex flex-col gap-4">
                               <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || hasCameraPermission !== true || !location}>
