@@ -34,6 +34,7 @@ import { addStudent, deleteStudent, getStudentsByClass, updateStudent, getClassD
 import type { SheetStudent, SheetClass } from "@/lib/definitions"
 
 export default function StudentsPage({ params }: { params: { classId: string } }) {
+  const { classId } = params;
   const { toast } = useToast()
   
   const [students, setStudents] = React.useState<SheetStudent[]>([])
@@ -47,8 +48,8 @@ export default function StudentsPage({ params }: { params: { classId: string } }
     setIsLoading(true);
     try {
       const [fetchedStudents, fetchedClass] = await Promise.all([
-        getStudentsByClass(params.classId),
-        getClassDetails(params.classId)
+        getStudentsByClass(classId),
+        getClassDetails(classId)
       ]);
       setStudents(fetchedStudents);
       setClassDetails(fetchedClass);
@@ -62,7 +63,7 @@ export default function StudentsPage({ params }: { params: { classId: string } }
     } finally {
       setIsLoading(false);
     }
-  }, [params.classId, toast]);
+  }, [classId, toast]);
 
   React.useEffect(() => {
     fetchStudentsAndClass();
@@ -89,7 +90,7 @@ export default function StudentsPage({ params }: { params: { classId: string } }
         await updateStudent({ id: currentStudent.id, name: studentName });
         toast({ title: "Sukses!", description: "Nama siswa berhasil diperbarui." })
       } else {
-        await addStudent({ name: studentName, classId: params.classId });
+        await addStudent({ name: studentName, classId: classId });
         toast({ title: "Sukses!", description: "Siswa baru berhasil ditambahkan." })
       }
       fetchStudentsAndClass();
