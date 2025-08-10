@@ -183,7 +183,7 @@ export default function StudentDashboardPage() {
     
     let photoDataUri: string | undefined = undefined;
     if(status === 'present') {
-        if(!hasCameraPermission || !videoRef.current || !videoRef.current.srcObject) {
+        if(!hasCameraPermission || !videoRef.current) {
             toast({
                 title: "Kamera tidak siap",
                 description: "Pastikan Anda telah memberikan izin kamera dan kamera berfungsi.",
