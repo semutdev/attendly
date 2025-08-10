@@ -1,3 +1,4 @@
+'use server';
 /**
  * @fileoverview Service for interacting with the Google Sheets API.
  */
