@@ -87,11 +87,11 @@ export default function StudentDashboardPage() {
                 setLocationError(null);
             },
             () => {
-                setLocationError("Gagal mendapatkan lokasi. Mohon izinkan akses lokasi.");
+                setLocationError("Gagal mendapatkan lokasi. Fitur lokasi tidak wajib.");
                  toast({
-                    variant: 'destructive',
-                    title: 'Akses Lokasi Ditolak',
-                    description: 'Mohon izinkan akses lokasi di browser Anda untuk melanjutkan.',
+                    variant: 'default',
+                    title: 'Info Lokasi',
+                    description: 'Gagal mendapatkan lokasi. Anda tetap bisa absen.',
                 });
             }
         );
@@ -158,15 +158,6 @@ export default function StudentDashboardPage() {
         toast({
             title: "Alasan diperlukan",
             description: "Silakan isi alasan ketidakhadiran Anda.",
-            variant: "destructive"
-        })
-        return;
-    }
-    
-    if(!location) {
-         toast({
-            title: "Lokasi tidak siap",
-            description: "Pastikan Anda telah memberikan izin lokasi dan lokasi berfungsi.",
             variant: "destructive"
         })
         return;
@@ -255,7 +246,7 @@ export default function StudentDashboardPage() {
                                    {motivationalQuote}
                                 </AlertDescription>
                               </Alert>
-                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting || !location}>
+                              <Button size="lg" className="h-20 text-lg flex-col gap-1" onClick={() => handleAttendance('present')} disabled={isSubmitting}>
                                   {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin"/> : <UserCheck className="h-6 w-6"/>}
                                   Hadir
                               </Button>
@@ -264,9 +255,9 @@ export default function StudentDashboardPage() {
                                   Izin / Sakit
                               </Button>
                               {locationError && (
-                                <Alert variant="destructive" className="mt-4">
+                                <Alert variant="default" className="mt-4">
                                     <MapPin className="h-4 w-4" />
-                                    <AlertTitle>Lokasi Tidak Dapat Diakses</AlertTitle>
+                                    <AlertTitle>Info Lokasi</AlertTitle>
                                     <AlertDescription>
                                         {locationError}
                                     </AlertDescription>
