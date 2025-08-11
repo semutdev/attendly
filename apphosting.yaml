@@ -8,7 +8,7 @@ runConfig:
 
 # Bagian ini yang paling penting
 env:
-  # CONTOH 1: Mengambil nilai dari GitHub Secret
+  # CONTOH 1: Mengambil nilai dari Google service env
   - variable: GOOGLE_SHEET_ID # Ini adalah nama yang akan digunakan di kode Next.js (process.env.DATABASE_URL)
     secret: GOOGLE_SHEET_ID # Ini adalah NAMA SECRET yang Anda buat di GitHub
   - variable: GOOGLE_SERVICE_ACCOUNT_EMAIL # Ini adalah nama yang akan digunakan di kode Next.js (process.env.DATABASE_URL)
