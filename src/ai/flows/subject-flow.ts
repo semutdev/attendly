@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Server-side actions for interacting with Google Sheets to manage subject data.
  */

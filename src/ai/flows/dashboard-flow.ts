@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Server-side actions for the teacher dashboard.
  */
