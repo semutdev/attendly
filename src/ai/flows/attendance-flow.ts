@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 'use server';
 /**
  * @fileOverview Server-side actions for managing student attendance.
