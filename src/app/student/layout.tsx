@@ -1,5 +1,3 @@
-'use server';
-
 export default function StudentLayout({
   children,
 }: {
