@@ -1,5 +1,4 @@
 'use server';
-export const runtime = 'edge';
 /**
  * @fileOverview Server-side actions for interacting with Google Sheets to manage class data.
  */
