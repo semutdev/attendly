@@ -1,3 +1,4 @@
+'use server';
 export const runtime = 'edge';
 
 export default function StudentLayout({

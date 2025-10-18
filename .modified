@@ -1,0 +1,7 @@
+src/app/student/layout.tsx
+src/app/layout.tsx
+src/ai/flows/dashboard-flow.ts
+src/ai/flows/attendance-flow.ts
+src/ai/flows/sheet-flow.ts
+src/ai/flows/subject-flow.ts
+src/ai/flows/student-flow.ts
